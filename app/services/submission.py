@@ -58,13 +58,23 @@ class SubmissionService:
                 run.failed_at = datetime.now(UTC)
                 logger.exception(
                     "Task publication failed",
-                    extra={"run_id": str(run.id), "source": source, "stage": "publication"},
+                    extra={
+                        "run_id": str(run.id),
+                        "request_id": request_id,
+                        "source": source,
+                        "stage": "publication",
+                    },
                 )
             else:
                 run.status = RunStatus.QUEUED
                 logger.info(
                     "Task published",
-                    extra={"run_id": str(run.id), "source": source, "stage": "publication"},
+                    extra={
+                        "run_id": str(run.id),
+                        "request_id": request_id,
+                        "source": source,
+                        "stage": "publication",
+                    },
                 )
         if publication_error is not None:
             raise QueuePublishError(run_id=record.id) from publication_error

@@ -133,7 +133,7 @@ def test_body_limit(settings, streamed):
     app = create_app(settings.model_copy(update={"max_request_body_bytes": 4}))
     with TestClient(app) as client:
         content = iter([b"123", b"456"]) if streamed else b"123456"
-        response = client.post("/missing", content=content)
+        response = client.post("/api/v1/runs?source=who_when.algorithm_generated", content=content)
     assert response.status_code == 413
     assert response.json()["error"]["code"] == "PAYLOAD_TOO_LARGE"
 

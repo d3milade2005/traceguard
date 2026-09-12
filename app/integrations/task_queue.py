@@ -1,7 +1,6 @@
 from uuid import UUID
 
 from celery import Celery
-from kombu.exceptions import OperationalError
 
 from app.core.exceptions import QueuePublishError
 from app.workers.tasks import TASK_NAME
@@ -22,5 +21,7 @@ class CeleryRunPublisher:
                 timeout=self.timeout,
                 confirm_timeout=self.timeout,
             )
-        except (OperationalError, OSError) as exc:
+        except Exception as exc:
+            # The external publication boundary must preserve the durable Run even
+            # for unexpected transport/serialization errors or uncertain confirms.
             raise QueuePublishError(run_id=run_id) from exc

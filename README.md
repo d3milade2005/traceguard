@@ -4,21 +4,20 @@ Backend foundation for post-mortem debugging of failed multi-agent executions.
 The planned pipeline preserves a failed trace, normalizes it, attributes the
 failure, constructs a RegressionSpec, compiles PyTest, and validates it in isolation.
 
-**Current scope:** configuration, HTTP infrastructure, PostgreSQL persistence,
-migrations, worker infrastructure, canonical trace contracts, and Who&When
-normalization. There is no trace-submission API or processing
-pipeline yet. No generated Python is executed.
+**Current scope:** failed-trace submission, exact source-byte persistence, asynchronous
+Who&When normalization, and retrieval of durable processing state. No generated
+Python is executed.
 
 ## Architecture
 
 A modular monolith: FastAPI handles transport, services own workflows and
 transactions, SQLAlchemy owns persistence, and integrations isolate external
-systems. Celery workers will call services through thin task functions.
+systems. Celery workers call the normalization service through a thin task function.
 
 PostgreSQL is authoritative. RabbitMQ transports tasks; Celery results are disabled.
-A future submission must commit the original trace before publishing a task and
-returning HTTP 202. Queue-handoff failures and worker recovery need explicit handling
-when processing is implemented.
+Submission commits the original trace before publishing an ID-only task and
+returning HTTP 202. Publication failures preserve the Run and record a safe failure
+code. Expiring PostgreSQL claims fence concurrent workers.
 
 ```text
 app/
@@ -30,7 +29,7 @@ app/
     models/                  Run and TraceStep
     base.py, session.py      Metadata, engine and session lifecycle
   schemas/                   Validated contracts; no ORM responses
-  services/                  Run persistence and readiness
+  services/                  Submission, normalization, persistence, readiness
   integrations/
     broker.py                AMQP readiness/error translation
     traces/                  Pure Who&When trace adapter
@@ -103,7 +102,7 @@ uv run celery -A app.workers.celery_app:celery_app worker --loglevel=INFO
 On Windows, use `docker compose up -d worker` for the Linux worker. Celery does not
 officially support [Windows workers](https://docs.celeryq.dev/en/main/faq.html#windows). The host API is supported on Windows.
 
-The worker has no application tasks yet. To check its control connection:
+The worker registers `traceguard.process_run`. To check its control connection:
 
 ```sh
 docker compose exec worker celery -A app.workers.celery_app:celery_app inspect ping
@@ -115,12 +114,14 @@ docker compose exec worker celery -A app.workers.celery_app:celery_app inspect p
 | --- | --- |
 | `GET /health` | HTTP 200 liveness; does not contact infrastructure |
 | `GET /ready` | HTTP 200 after PostgreSQL query and authenticated RabbitMQ connection; HTTP 503 on dependency failure |
+| `POST /api/v1/runs?source=...` | HTTP 202 after durable submission and task publication |
+| `GET /api/v1/runs/{run_id}` | Processing state, timestamps, safe failure code, normalized step count |
 | `GET /docs` | Swagger UI |
 | `GET /redoc` | ReDoc |
 | `GET /openapi.json` | OpenAPI schema |
 
 Readiness checks connectivity, not migration currency. Apply migrations separately.
-No business endpoints are mounted under `/api/v1` yet.
+A missing run returns the consistent `RUN_NOT_FOUND` HTTP 404 error.
 
 API errors share this envelope:
 
@@ -154,6 +155,7 @@ Database and broker URLs are required and masked in settings representations.
 | `DB_POOL_SIZE`, `DB_MAX_OVERFLOW` | `5`, `5`, per process |
 | `DEPENDENCY_TIMEOUT_SECONDS` | `3`; connection/pool/query readiness limits |
 | `WORKER_CONCURRENCY` | `2` |
+| `NORMALIZATION_TIMEOUT_SECONDS` | `60`; soft limit; hard limit +10s and claim lease +30s |
 | `POSTGRES_USER`, `POSTGRES_PASSWORD`, `POSTGRES_DB` | Compose initialization; match host URL credentials |
 | `RABBITMQ_DEFAULT_USER`, `RABBITMQ_DEFAULT_PASS`, `RABBITMQ_DEFAULT_VHOST` | Compose initialization; match host URL credentials |
 | `TEST_DATABASE_URL`, `TEST_RABBITMQ_URL` | Optional integration-test connections |
@@ -173,20 +175,22 @@ Migration `0001` creates only:
   agent/event/tool/status fields, timezone-aware event time, and flexible JSONB
   input/output/tool payloads and metadata.
 
-The source is inherited from Run. Source bytes retain whitespace, duplicate JSON
-keys, encoding, and other details that JSONB would normalize. Derived steps never
+The source is inherited from Run. Accepted UTF-8 source bytes retain whitespace, field order, escapes, and other
+details that JSONB would normalize. The HTTP boundary rejects duplicate JSON keys
+and benchmark fields; lower-level persistence still preserves arbitrary bytes. Derived steps never
 replace the original trace. Services expose no source-update operation.
 
-`pending` means persisted diagnostic input; `failed` means a diagnostic failure
-was recorded. These states do not describe whether the source execution succeeded.
-A failed state requires a safe code and timestamp. Queued/processing/completed/review
-states will arrive with the actual processing workflow.
+Migration `0002` adds `updated_at`, normalized `task` context, claim token/expiry,
+a persisted attempt count, and lifecycle constraints. States are `pending`,
+`queued`, `processing`, `normalized`, and `failed`. These describe diagnostic
+processing, not whether the submitted execution succeeded. A failed state requires
+a safe code and timestamp. `normalized` does not imply attribution completed.
 
 `RunService` receives a session factory. Writes use `with sessions.begin()` for
 commit, rollback, and closure; reads close their sessions without committing.
 Failure recording uses a fresh, conditional transaction and is repeatable.
-SQL parameters are hidden. API lifespan disposes its engine; future workers must
-create engines after forking.
+SQL parameters are hidden. API lifespan disposes its engine; workers create
+engines inside task execution, after forking.
 
 Attribution, AttributionEvidence, RegressionSpec, GeneratedTest, and ValidationResult
 are deferred until their contracts and cardinalities can be validated.
@@ -235,7 +239,8 @@ uv run pytest -m integration
 The database name must end in `_test`. PostgreSQL tests migrate and remove only
 their own random schema. They verify real BYTEA/JSONB persistence, constraints,
 rollback, durable failure recording, migration upgrade/downgrade, and schema drift.
-RabbitMQ tests authenticate without publishing application tasks.
+The live worker test publishes an ID-only task to its own RabbitMQ queue and checks
+the normalized result in PostgreSQL. Unit tests do not use infrastructure.
 
 ## Trace normalization
 
@@ -271,12 +276,79 @@ question. Malformed trace structure raises `TraceAdapterError`; empty history is
 rejected, while empty message content is retained. The adapter does not persist
 or replace the source, and never copies unknown source fields into metadata.
 
+## Submit a failed trace
+
+Create a UTF-8 file named `failed-trace.json` containing only production trace fields:
+
+```json
+{"question":"Original task","history":[{"name":"Agent","role":"assistant","content":""}]}
+```
+
+```sh
+curl -i -X POST 'http://127.0.0.1:8000/api/v1/runs?source=who_when.algorithm_generated' -H 'Content-Type: application/json' -H 'X-Request-ID: example-1' --data-binary @failed-trace.json
+```
+
+On PowerShell, use `curl.exe`. `--data-binary` preserves the file bytes. The source
+may also be `who_when.hand_crafted`, whose messages contain only `role` and `content`.
+Both variants support native-list or JSON-string `history`. The top-level fields
+are exactly `question` and `history`; benchmark fixture rows must have their labels
+removed by the caller before submission. Labels are never accepted as query fields.
+Empty content remains valid. Source structure is checked before submission; canonical
+validation and normalization happen in the worker.
+
+Response: HTTP 202, a `Location` header, and `{"id":"<uuid>","status":"queued"}`.
+Poll that location:
+
+```sh
+curl http://127.0.0.1:8000/api/v1/runs/<uuid>
+```
+
+```json
+{"id":"<uuid>","source":"who_when.algorithm_generated","status":"normalized","created_at":"<timestamp>","updated_at":"<timestamp>","failure_code":null,"failed_at":null,"normalized_step_count":1}
+```
+
+Submission asserts that the source execution has already failed. It records the
+failure signal as `developer_report`; no semantic failure detection is performed.
+
+## Processing and recovery
+
+The workflow commits the original Run as `pending`, holds a short row lock during
+confirmed publication, and records `queued`. On a known or uncertain publication
+error it records `failed` / `QUEUE_PUBLICATION_FAILED` and returns HTTP 503 with
+`error.run_id`; a possibly delivered task then observes the failure and does no work.
+
+The worker commits a `processing` lease, adapts outside the transaction, then locks
+and verifies its token before atomically inserting all steps and recording
+`normalized`. Duplicate tasks cannot insert duplicate steps. Expired claims may be
+reclaimed; older owners cannot persist results. Unexpired duplicate deliveries retry
+later. Four persisted processing attempts bound repeated worker-crash redelivery.
+
+Temporary database failures get at most three delayed Celery retries. Permanent input
+failures are recorded without retry. Unexpected workflow errors are logged, recorded
+with a safe code, and raised. Soft timeouts record failure where PostgreSQL is
+available; hard process loss requeues the task and recovery waits for lease expiry.
+Keep Compose shutdown grace above the configured hard timeout (default grace: 90s).
+
+There is deliberately no outbox or automatic recovery scheduler. Process death
+between the initial commit and publication may leave a visible `pending` Run.
+Unavailable PostgreSQL during final error recording or a failed retry publication
+may leave `queued`/`processing`; logs identify the unresolved outcome. After restoring
+infrastructure, an operator can republish the same pending/queued/expired-processing
+Run ID (terminal runs are harmless no-ops):
+
+```sh
+uv run celery -A app.workers.celery_app:celery_app call traceguard.process_run --kwargs '{"run_id":"<uuid>"}'
+```
+
+Stop workers before a migration downgrade. Downgrading `0002` preserves raw evidence
+and steps but removes normalized task/claim fields and marks phase-2 states failed
+with `SCHEMA_DOWNGRADED`. Restoring the schema does not resume those terminal runs.
+HTTP submission itself is not deduplicated: a repeated POST creates a new Run.
+
 ## Next phase
 
-Implement trace submission using the canonical contracts and Who&When adapter:
-byte-preserving ingestion, persist-before-publish behavior, durable
-processing transitions, and an idempotent thin worker task. Add end-to-end tests
-for queue-handoff failure and worker retry/recovery before attribution work.
+Define the non-destructive analysis-context contract and evidence references before
+attribution. Keep canonical step positions and original evidence unchanged.
 
 Context selection, LLM providers, attribution, RegressionSpec, PyTest compilation,
 isolated validation, benchmark evaluation, authentication, and frontend work remain

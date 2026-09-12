@@ -264,7 +264,10 @@ def test_adapter_and_canonical_failure(services, invalid_canonical):
 @pytest.mark.parametrize("transient", [False, True])
 def test_partial_write_rolls_back_and_transient_retry_succeeds(services, postgres, transient):
     runs, _, _, normalization = services
-    raw = b'{"question":"Q","history":[{"role":"A","content":"first"},{"role":"B","content":"second"}]}'
+    raw = (
+        b'{"question":"Q","history":[{"role":"A","content":"first"},'
+        b'{"role":"B","content":"second"}]}'
+    )
     record = stored_run(runs, raw, "who_when.hand_crafted")
     engine, _, _ = postgres
 
