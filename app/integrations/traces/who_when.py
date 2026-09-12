@@ -27,6 +27,28 @@ class WhoWhenTraceAdapter:
             raise ValueError("Unsupported Who&When variant")
         self._variant = variant
 
+    def validate_submission(self, record: Mapping[str, JsonValue]) -> None:
+        """Only production trace fields are accepted; benchmark labels remain offline."""
+        if set(record) != {"question", "history"}:
+            raise TraceAdapterError("Only question and history are accepted.")
+        _required_string(record, "question")
+        history = record["history"]
+        if isinstance(history, str):
+            try:
+                history = json.loads(history)
+            except (ValueError, RecursionError) as exc:
+                raise TraceAdapterError("History must contain a JSON array.") from exc
+        if not isinstance(history, list) or not history:
+            raise TraceAdapterError("History must be a nonempty array.")
+        fields = {"role", "content"}
+        if self._variant == "algorithm_generated":
+            fields.add("name")
+        for message in history:
+            if not isinstance(message, dict) or set(message) != fields:
+                raise TraceAdapterError("Message fields do not match the source contract.")
+            for field in fields:
+                _required_string(message, field, allow_empty=field == "content")
+
     def adapt(self, record: Mapping[str, JsonValue]) -> CanonicalTrace:
         if not isinstance(record, Mapping):
             raise TraceAdapterError("The trace record must be an object.")

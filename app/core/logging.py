@@ -15,7 +15,16 @@ from sqlalchemy.engine import make_url
 from app.core.config import Settings
 
 log_context: ContextVar[Mapping[str, str]] = ContextVar("log_context", default=MappingProxyType({}))
-LOG_FIELDS = ("request_id", "run_id", "task_id", "component", "stage", "status", "duration_ms")
+LOG_FIELDS = (
+    "request_id",
+    "run_id",
+    "task_id",
+    "component",
+    "source",
+    "stage",
+    "status",
+    "duration_ms",
+)
 
 
 @contextmanager

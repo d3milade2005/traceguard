@@ -1,5 +1,6 @@
 import logging
 from http import HTTPStatus
+from uuid import UUID
 
 from fastapi import FastAPI, Request
 from fastapi.exceptions import RequestValidationError
@@ -10,18 +11,25 @@ from app.core.exceptions import (
     ApplicationError,
     DependencyUnavailableError,
     InvalidTraceError,
+    QueuePublishError,
     RunNotFoundError,
+    TraceAdapterError,
+    UnsupportedTraceSourceError,
 )
 from app.schemas.http import ErrorDetail, ErrorResponse
 
 logger = logging.getLogger(__name__)
 
 
-def error_response(request_id: str, status: int, code: str, message: str) -> JSONResponse:
-    body = ErrorResponse(error=ErrorDetail(code=code, message=message, request_id=request_id))
+def error_response(
+    request_id: str, status: int, code: str, message: str, run_id: UUID | None = None
+) -> JSONResponse:
+    body = ErrorResponse(
+        error=ErrorDetail(code=code, message=message, request_id=request_id, run_id=run_id)
+    )
     return JSONResponse(
         status_code=status,
-        content=body.model_dump(),
+        content=body.model_dump(mode="json", exclude_none=True),
         headers={"X-Request-ID": request_id},
     )
 
@@ -31,8 +39,17 @@ async def application_error_handler(request: Request, exc: ApplicationError) -> 
         DependencyUnavailableError: 503,
         RunNotFoundError: 404,
         InvalidTraceError: 413,
+        QueuePublishError: 503,
+        TraceAdapterError: 422,
+        UnsupportedTraceSourceError: 422,
     }.get(type(exc), 500)
-    return error_response(request.state.request_id, status, exc.code, exc.public_message)
+    return error_response(
+        request.state.request_id,
+        status,
+        exc.code,
+        exc.public_message,
+        exc.run_id if isinstance(exc, QueuePublishError) else None,
+    )
 
 
 async def validation_error_handler(request: Request, exc: RequestValidationError) -> JSONResponse:

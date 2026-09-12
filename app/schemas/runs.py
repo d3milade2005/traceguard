@@ -1,4 +1,5 @@
 from datetime import datetime
+from typing import Literal
 from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict, Field
@@ -29,3 +30,26 @@ class RunRecord(BaseModel):
     failure_code: str | None
     failed_at: datetime | None
     created_at: datetime
+
+
+class RunSubmissionQuery(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    source: str = Field(min_length=1, max_length=100)
+
+
+class RunAccepted(BaseModel):
+    id: UUID
+    status: Literal[RunStatus.QUEUED]
+
+
+class RunSummary(BaseModel):
+    model_config = ConfigDict(from_attributes=True, frozen=True)
+
+    id: UUID
+    source: str
+    status: RunStatus
+    created_at: datetime
+    updated_at: datetime
+    failure_code: str | None
+    failed_at: datetime | None
+    normalized_step_count: int

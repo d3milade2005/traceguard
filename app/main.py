@@ -16,7 +16,12 @@ from app.api.v1.router import router as v1_router
 from app.core.config import Settings, get_settings
 from app.core.logging import configure_logging
 from app.db.session import create_database_engine, create_session_factory
+from app.integrations.task_queue import CeleryRunPublisher
+from app.integrations.traces.sources import trace_adapters
 from app.services.readiness import ReadinessService
+from app.services.runs import RunService
+from app.services.submission import SubmissionService
+from app.workers.factory import create_celery_app
 
 
 def create_app(settings: Settings | None = None) -> FastAPI:
@@ -30,16 +35,24 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         app.state.readiness = ReadinessService(
             engine, settings.rabbitmq_url.get_secret_value(), settings.dependency_timeout_seconds
         )
+        queue = create_celery_app(settings)
+        app.state.runs = RunService(app.state.sessions, settings.max_request_body_bytes)
+        app.state.submission = SubmissionService(
+            app.state.runs,
+            CeleryRunPublisher(queue, settings.dependency_timeout_seconds),
+            trace_adapters(),
+        )
         try:
             yield
         finally:
+            queue.close()
             engine.dispose()
 
     # Debug never enables Starlette's traceback responses.
     app = FastAPI(
         title=settings.app_name,
         version=version("traceguard"),
-        description="Post-mortem multi-agent trace diagnostics. Foundation phase.",
+        description="Multi-agent trace diagnostics and asynchronous normalization.",
         lifespan=lifespan,
     )
     app.state.settings = settings

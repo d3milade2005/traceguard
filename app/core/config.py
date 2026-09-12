@@ -30,6 +30,8 @@ class Settings(BaseSettings):
     dependency_timeout_seconds: int = Field(default=3, ge=1, le=30)
     worker_concurrency: int = Field(default=2, ge=1, le=64)
 
+    normalization_timeout_seconds: int = Field(default=60, ge=10, le=600)
+
     @field_validator("database_url")
     @classmethod
     def validate_database_url(cls, value: SecretStr) -> SecretStr:
