@@ -28,4 +28,4 @@ build/
 *.log
 
 # Local datasets
-data/who_when/
+data/who_when/*.parquet
