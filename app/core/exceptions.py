@@ -18,3 +18,8 @@ class RunNotFoundError(ApplicationError):
 class InvalidTraceError(ApplicationError):
     code = "INVALID_TRACE"
     public_message = "The trace exceeds the configured size limit."
+
+
+class TraceAdapterError(ApplicationError):
+    code = "TRACE_ADAPTER_ERROR"
+    public_message = "The trace structure is invalid or unsupported."

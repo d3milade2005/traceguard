@@ -1,10 +1,14 @@
 # Integration boundaries
 
-These packages reserve three required boundaries, without simulated implementations.
+These packages isolate trace formats, providers, and execution backends.
 
-- `traces/`: add the canonical Pydantic contract and a small `TraceAdapter` protocol
-  with the first actual source adapter. Parsing produces derived steps and never
-  updates `Run.original_trace`. Benchmark labels belong outside production models.
+- `traces/`: `WhoWhenTraceAdapter` converts a single Algorithm-Generated or
+  Hand-Crafted record into the shared `app.schemas.traces` Pydantic contracts.
+  It accepts native-list or JSON-string history, preserves every message, and
+  derives sequence exclusively from list position. It never reads benchmark labels.
+  Persistence and source-byte preservation belong to the caller. Parquet loading
+  and label interpretation belong to a future evaluation boundary. Add a small
+  adapter protocol when a normalization service needs to accept interchangeable adapters.
 - `llm/`: add a capability-oriented `LLMClient` protocol when attribution needs
   structured generation. Accept a Pydantic response model, return a validated
   instance, and translate SDK errors here. Inject clients into services so a

@@ -5,7 +5,8 @@ The planned pipeline preserves a failed trace, normalizes it, attributes the
 failure, constructs a RegressionSpec, compiles PyTest, and validates it in isolation.
 
 **Current scope:** configuration, HTTP infrastructure, PostgreSQL persistence,
-migrations, and worker infrastructure. There is no trace-submission API or processing
+migrations, worker infrastructure, canonical trace contracts, and Who&When
+normalization. There is no trace-submission API or processing
 pipeline yet. No generated Python is executed.
 
 ## Architecture
@@ -32,7 +33,8 @@ app/
   services/                  Run persistence and readiness
   integrations/
     broker.py                AMQP readiness/error translation
-    traces/, llm/, execution/ Future integration boundaries
+    traces/                  Pure Who&When trace adapter
+    llm/, execution/         Future integration boundaries
   workers/                   Celery configuration and correlation signals
 alembic/versions/             Reviewed, explicit database migrations
 tests/unit/                  No infrastructure or paid API calls
@@ -235,10 +237,44 @@ their own random schema. They verify real BYTEA/JSONB persistence, constraints,
 rollback, durable failure recording, migration upgrade/downgrade, and schema drift.
 RabbitMQ tests authenticate without publishing application tasks.
 
+## Trace normalization
+
+`app.schemas.traces.CanonicalTrace` holds `source`, task context, and an ordered
+nonempty tuple of canonical `TraceStep` objects. Steps have nonnegative sequences,
+optional agent identity and execution fields, and metadata. A complete canonical
+trace requires consecutive zero-based sequences. Context selection will use a
+separate representation so original positions remain stable.
+
+```python
+from app.integrations.traces.who_when import WhoWhenTraceAdapter
+
+# record is one decoded JSON object or a Parquet-derived Python mapping.
+trace = WhoWhenTraceAdapter(variant="algorithm_generated").adapt(record)
+# Use variant="hand_crafted" for the other observed schema.
+```
+
+The adapter is pure and synchronous; it needs no database, worker, or Parquet
+library. `history` may be a native list or a JSON-encoded list string. `question`
+becomes task context. Every message, including empty bodies and human messages,
+keeps its original position and text as `output`, with `event_type="message"`.
+
+Algorithm-Generated uses `name` as agent identity. Hand-Crafted uses `role`, maps
+`human` to no AI agent, and maps decorated Orchestrator roles to `Orchestrator`.
+Metadata preserves `role`, plus `decorator` and directed `recipient` when present.
+Missing inputs, status, timestamps, and tool fields stay `None`; code, OCR, and
+terminal output embedded in message text are not interpreted.
+
+Benchmark IDs, reference answers, correctness flags, mistake labels, and row
+provenance are excluded. In particular, `mistake_step` is neither read nor validated
+and never determines sequence. Its indexing semantics remain a future evaluation
+question. Malformed trace structure raises `TraceAdapterError`; empty history is
+rejected, while empty message content is retained. The adapter does not persist
+or replace the source, and never copies unknown source fields into metadata.
+
 ## Next phase
 
-Implement trace submission and the first real adapter: a validated canonical trace
-contract, byte-preserving ingestion, persist-before-publish behavior, durable
+Implement trace submission using the canonical contracts and Who&When adapter:
+byte-preserving ingestion, persist-before-publish behavior, durable
 processing transitions, and an idempotent thin worker task. Add end-to-end tests
 for queue-handoff failure and worker retry/recovery before attribution work.
 
