@@ -1,0 +1,28 @@
+AGENTS.md
+
+# Local configuration and credentials
+.env
+.env.*
+!.env.example
+
+# Python and development tools
+.venv/
+.tools/
+.uv-cache/
+.python-cache/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+.coverage
+htmlcov/
+dist/
+build/
+*.egg-info/
+
+# Editors and local verification artifacts
+.idea/
+.vscode/
+.local/
+*.log

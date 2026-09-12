@@ -1,0 +1,100 @@
+from functools import lru_cache
+from typing import Literal, Self
+from urllib.parse import urlsplit
+
+from pydantic import Field, SecretStr, field_validator, model_validator
+from pydantic_settings import BaseSettings, SettingsConfigDict
+from sqlalchemy.engine import make_url
+from sqlalchemy.exc import ArgumentError
+
+
+class Settings(BaseSettings):
+    model_config = SettingsConfigDict(
+        env_file=".env",
+        env_file_encoding="utf-8",
+        extra="ignore",
+        hide_input_in_errors=True,
+    )
+
+    app_name: str = Field(default="Traceguard", min_length=1)
+    app_env: Literal["development", "test", "production"] = "development"
+    debug: bool = False
+    api_v1_prefix: str = "/api/v1"
+    database_url: SecretStr
+    rabbitmq_url: SecretStr
+    log_level: Literal["DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"] = "INFO"
+    cors_allowed_origins: list[str] = Field(default_factory=list)
+    max_request_body_bytes: int = Field(default=10 * 1024 * 1024, ge=1)
+    db_pool_size: int = Field(default=5, ge=1, le=100)
+    db_max_overflow: int = Field(default=5, ge=0, le=100)
+    dependency_timeout_seconds: int = Field(default=3, ge=1, le=30)
+    worker_concurrency: int = Field(default=2, ge=1, le=64)
+
+    @field_validator("database_url")
+    @classmethod
+    def validate_database_url(cls, value: SecretStr) -> SecretStr:
+        try:
+            url = make_url(value.get_secret_value())
+            valid = (
+                url.drivername == "postgresql+psycopg"
+                and bool(url.host and url.database and url.username and url.password)
+                and (url.port is None or 1 <= url.port <= 65535)
+            )
+        except (ArgumentError, ValueError):
+            valid = False
+        if not valid:
+            raise ValueError("DATABASE_URL must be a PostgreSQL psycopg URL with credentials")
+        return value
+
+    @field_validator("rabbitmq_url")
+    @classmethod
+    def validate_rabbitmq_url(cls, value: SecretStr) -> SecretStr:
+        try:
+            url = urlsplit(value.get_secret_value())
+            valid = (
+                url.scheme in {"amqp", "amqps"}
+                and bool(url.hostname and url.username and url.password)
+                and (url.port is None or 1 <= url.port <= 65535)
+                and not url.fragment
+            )
+        except ValueError:
+            valid = False
+        if not valid:
+            raise ValueError("RABBITMQ_URL must be an AMQP URL with credentials")
+        return value
+
+    @field_validator("api_v1_prefix")
+    @classmethod
+    def validate_api_prefix(cls, value: str) -> str:
+        if not value.startswith("/") or value.endswith("/") or "?" in value or "#" in value:
+            raise ValueError("API_V1_PREFIX must start with / and have no trailing /")
+        return value
+
+    @field_validator("cors_allowed_origins")
+    @classmethod
+    def validate_origins(cls, values: list[str]) -> list[str]:
+        for value in values:
+            url = urlsplit(value)
+            if (
+                url.scheme not in {"http", "https"}
+                or not url.netloc
+                or url.username
+                or url.password
+                or url.path
+                or url.query
+                or url.fragment
+                or "*" in value
+            ):
+                raise ValueError("CORS origins must be explicit HTTP(S) origins without paths")
+        return values
+
+    @model_validator(mode="after")
+    def validate_production(self) -> Self:
+        if self.app_env == "production" and self.debug:
+            raise ValueError("DEBUG must be false in production")
+        return self
+
+
+@lru_cache
+def get_settings() -> Settings:
+    return Settings()  # type: ignore[call-arg]  # Required fields come from the environment.
