@@ -22,6 +22,7 @@ class RequestContextMiddleware:
         if scope["type"] != "http":
             await self.app(scope, receive, send)
             return
+        
         supplied_id = Headers(scope=scope).get("x-request-id", "")
         request_id = supplied_id if REQUEST_ID_PATTERN.fullmatch(supplied_id) else uuid4().hex
         scope.setdefault("state", {})["request_id"] = request_id
