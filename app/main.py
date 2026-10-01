@@ -16,8 +16,9 @@ from app.api.v1.router import router as v1_router
 from app.core.config import Settings, get_settings
 from app.core.logging import configure_logging
 from app.db.session import create_database_engine, create_session_factory
-from app.integrations.task_queue import CeleryRunPublisher
+from app.integrations.task_queue import CeleryAttributionPublisher, CeleryRunPublisher
 from app.integrations.traces.sources import trace_adapters
+from app.services.attributions import AttributionStore
 from app.services.readiness import ReadinessService
 from app.services.runs import RunService
 from app.services.submission import SubmissionService
@@ -37,6 +38,10 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         )
         queue = create_celery_app(settings)
         app.state.runs = RunService(app.state.sessions, settings.max_request_body_bytes)
+        app.state.attributions = AttributionStore(app.state.sessions)
+        app.state.attribution_publisher = CeleryAttributionPublisher(
+            queue, settings.dependency_timeout_seconds
+        )
         app.state.submission = SubmissionService(
             app.state.runs,
             CeleryRunPublisher(queue, settings.dependency_timeout_seconds),

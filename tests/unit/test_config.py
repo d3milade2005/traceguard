@@ -41,6 +41,41 @@ def test_settings_repr_masks_credentials(settings):
     assert "**********" in repr(settings)
 
 
+def test_openai_defaults_and_optional_secret(monkeypatch):
+    settings = Settings()
+    assert settings.openai_api_key is None
+    assert settings.openai_model == "gpt-5.6-luna"
+    assert settings.openai_reasoning_effort == "medium"
+    assert settings.openai_timeout_seconds == 60
+    assert settings.openai_max_output_tokens == 4096
+    monkeypatch.setenv("OPENAI_API_KEY", "unit-test-secret")
+    monkeypatch.setenv("OPENAI_MODEL", "configured-model")
+    monkeypatch.setenv("OPENAI_REASONING_EFFORT", "low")
+    configured = Settings()
+    assert configured.openai_model == "configured-model"
+    assert configured.openai_reasoning_effort == "low"
+    assert "unit-test-secret" not in repr(configured)
+
+
+@pytest.mark.parametrize(
+    "options",
+    [
+        {"openai_model": ""},
+        {"openai_reasoning_effort": "unsupported"},
+        {"openai_timeout_seconds": 0},
+        {"openai_max_output_tokens": 0},
+    ],
+)
+def test_invalid_openai_configuration(options):
+    with pytest.raises(ValidationError):
+        Settings(**options)
+
+
+def test_empty_openai_key_is_absent(monkeypatch):
+    monkeypatch.setenv("OPENAI_API_KEY", "")
+    assert Settings().openai_api_key is None
+
+
 def test_dotenv_loading_and_environment_precedence(tmp_path: Path, monkeypatch):
     (tmp_path / ".env").write_text(
         'APP_NAME=From dotenv\nLOG_LEVEL=WARNING\nCORS_ALLOWED_ORIGINS=["http://localhost:3000"]',

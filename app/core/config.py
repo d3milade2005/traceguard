@@ -8,6 +8,7 @@ from sqlalchemy.engine import make_url
 from sqlalchemy.exc import ArgumentError
 
 from app.core.context import ContextPolicy
+from app.schemas.attributions import ReasoningEffort
 
 
 class Settings(BaseSettings):
@@ -35,6 +36,16 @@ class Settings(BaseSettings):
 
     normalization_timeout_seconds: int = Field(default=60, ge=10, le=600)
     analysis_context: ContextPolicy = Field(default_factory=ContextPolicy)
+    openai_api_key: SecretStr | None = None
+    openai_model: str = Field(default="gpt-5.6-luna", min_length=1, max_length=200)
+    openai_reasoning_effort: ReasoningEffort = "medium"
+    openai_timeout_seconds: int = Field(default=60, ge=1, le=600)
+    openai_max_output_tokens: int = Field(default=4096, ge=256, le=32768)
+
+    @field_validator("openai_api_key", mode="before")
+    @classmethod
+    def empty_key_is_absent(cls, value: object) -> object:
+        return None if isinstance(value, str) and not value.strip() else value
 
     @field_validator("database_url")
     @classmethod

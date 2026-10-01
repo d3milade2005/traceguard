@@ -44,4 +44,7 @@ def create_celery_app(settings: Settings) -> Celery:
     from app.workers.tasks import register_tasks
 
     register_tasks(app, settings)
+    from app.workers.attribution_tasks import register_attribution_task
+
+    register_attribution_task(app, settings)
     return app

@@ -68,7 +68,8 @@ def test_celery_configuration_and_normalization_task(settings):
     assert celery.conf.worker_prefetch_multiplier == 1
     assert celery.conf.broker_transport_options["confirm_publish"]
     assert {name for name in celery.tasks if not name.startswith("celery.")} == {
-        "traceguard.process_run"
+        "traceguard.process_run",
+        "traceguard.attribute_run",
     }
     assert celery.tasks["traceguard.process_run"].reject_on_worker_lost
     assert "traceguard" in celery.amqp.queues

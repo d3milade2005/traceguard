@@ -9,10 +9,13 @@ from starlette.responses import JSONResponse
 
 from app.core.exceptions import (
     ApplicationError,
+    AttributionNotFoundError,
+    AttributionQueuePublishError,
     DependencyUnavailableError,
     InvalidTraceError,
     QueuePublishError,
     RunNotFoundError,
+    RunNotNormalizedError,
     TraceAdapterError,
     UnsupportedTraceSourceError,
 )
@@ -22,10 +25,21 @@ logger = logging.getLogger(__name__)
 
 
 def error_response(
-    request_id: str, status: int, code: str, message: str, run_id: UUID | None = None
+    request_id: str,
+    status: int,
+    code: str,
+    message: str,
+    run_id: UUID | None = None,
+    attribution_id: UUID | None = None,
 ) -> JSONResponse:
     body = ErrorResponse(
-        error=ErrorDetail(code=code, message=message, request_id=request_id, run_id=run_id)
+        error=ErrorDetail(
+            code=code,
+            message=message,
+            request_id=request_id,
+            run_id=run_id,
+            attribution_id=attribution_id,
+        )
     )
     return JSONResponse(
         status_code=status,
@@ -42,6 +56,9 @@ async def application_error_handler(request: Request, exc: ApplicationError) -> 
         QueuePublishError: 503,
         TraceAdapterError: 422,
         UnsupportedTraceSourceError: 422,
+        AttributionNotFoundError: 404,
+        AttributionQueuePublishError: 503,
+        RunNotNormalizedError: 409,
     }.get(type(exc), 500)
     return error_response(
         request.state.request_id,
@@ -49,6 +66,7 @@ async def application_error_handler(request: Request, exc: ApplicationError) -> 
         exc.code,
         exc.public_message,
         exc.run_id if isinstance(exc, QueuePublishError) else None,
+        exc.attribution_id if isinstance(exc, AttributionQueuePublishError) else None,
     )
 
 

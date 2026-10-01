@@ -11,10 +11,12 @@ These packages isolate trace formats, providers, and execution backends.
   services. `validate_submission` rejects benchmark fields in production; `adapt`
   remains usable on offline benchmark records and never reads their labels.
   `sources.py` composes the two supported Who&When variants.
-- `llm/`: add a capability-oriented `LLMClient` protocol when attribution needs
-  structured generation. Accept a Pydantic response model, return a validated
-  instance, and translate SDK errors here. Inject clients into services so a
-  Gemini implementation or test fake does not change attribution.
+- `llm/`: `LLMClient.attribute(AttributionRequest)` returns a validated `LLMResult`
+  with a provider-independent decision and usage. `OpenAILLMClient` alone imports
+  the official SDK; it uses Responses, strict Structured Outputs, no tools or
+  storage, and translates provider exceptions. SDK retries are disabled because
+  Celery owns bounded transient retries. Credentials are checked only at inference.
+  Services receive an injected client; normal tests use a deterministic fake.
 - `execution/`: add a `TestRunner` protocol with the validation phase. Services
   will consume execution results; this package will enforce isolation, limits,
   and cleanup. Do not execute generated Python in the API, worker, or host.

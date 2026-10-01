@@ -16,3 +16,12 @@ connection pool. All derived steps and the normalized state commit together. The
 raw submission was committed separately before any task was published.
 
 See the root README for unresolved handoff/retry recovery and operational limits.
+
+`traceguard.attribute_run(attribution_id=...)` is explicitly submitted through the
+attribution API; normalization does not publish it. The task delegates to
+AttributionService with ContextManager and OpenAILLMClient. It owns only Celery
+retry metadata and its process-local engine. PostgreSQL ownership and four durable
+claims fence duplicate and stale delivery, while result/evidence commit atomically.
+Default provider timeout is 60s, soft/hard limits 90/100s, and claim lease 120s.
+SDK retries are disabled; the same 2/4/8s transient and six busy-retry bounds apply.
+Trace content, full prompts, credentials, and private reasoning are never logged.

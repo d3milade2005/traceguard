@@ -2,7 +2,8 @@ from uuid import UUID
 
 from celery import Celery
 
-from app.core.exceptions import QueuePublishError
+from app.core.exceptions import AttributionQueuePublishError, QueuePublishError
+from app.workers.attribution_tasks import ATTRIBUTION_TASK_NAME
 from app.workers.tasks import TASK_NAME
 
 
@@ -25,3 +26,22 @@ class CeleryRunPublisher:
             # The external publication boundary must preserve the durable Run even
             # for unexpected transport/serialization errors or uncertain confirms.
             raise QueuePublishError(run_id=run_id) from exc
+
+
+class CeleryAttributionPublisher:
+    def __init__(self, app: Celery, timeout: int) -> None:
+        self.app = app
+        self.timeout = timeout
+
+    def publish(self, attribution_id: UUID, request_id: str | None) -> None:
+        try:
+            self.app.send_task(
+                ATTRIBUTION_TASK_NAME,
+                kwargs={"attribution_id": str(attribution_id)},
+                headers={"request_id": request_id} if request_id else {},
+                task_id=str(attribution_id),
+                timeout=self.timeout,
+                confirm_timeout=self.timeout,
+            )
+        except Exception as exc:
+            raise AttributionQueuePublishError(attribution_id=attribution_id) from exc

@@ -9,6 +9,7 @@ class ErrorDetail(BaseModel):
     message: str
     request_id: str
     run_id: UUID | None = None
+    attribution_id: UUID | None = None
 
 
 class ErrorResponse(BaseModel):

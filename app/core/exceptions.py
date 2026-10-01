@@ -1,4 +1,8 @@
+from typing import TYPE_CHECKING
 from uuid import UUID
+
+if TYPE_CHECKING:
+    from app.schemas.attributions import ProviderUsage
 
 
 class ApplicationError(Exception):
@@ -55,6 +59,62 @@ class QueuePublishError(ApplicationError):
 class ProcessingRetryError(ApplicationError):
     code = "PROCESSING_UNAVAILABLE"
     public_message = "Processing is temporarily unavailable."
+
+
+class AttributionNotFoundError(ApplicationError):
+    code = "ATTRIBUTION_NOT_FOUND"
+    public_message = "The requested attribution does not exist."
+
+
+class AttributionValidationError(ApplicationError):
+    code = "ATTRIBUTION_INVALID"
+    public_message = "The attribution does not reference valid visible evidence."
+
+
+class AttributionInputError(ApplicationError):
+    code = "ATTRIBUTION_INPUT_INVALID"
+    public_message = "The analysis evidence cannot be safely supplied for attribution."
+
+
+class AttributionQueuePublishError(QueuePublishError):
+    public_message = "The attribution was preserved but could not be queued."
+
+    def __init__(self, *, attribution_id: UUID, run_id: UUID | None = None) -> None:
+        super().__init__(run_id=run_id)
+        self.attribution_id = attribution_id
+
+
+class LLMProviderError(ApplicationError):
+    code = "LLM_PROVIDER_ERROR"
+    public_message = "The attribution provider could not complete the request."
+
+
+class LLMTransientError(LLMProviderError):
+    code = "LLM_TEMPORARILY_UNAVAILABLE"
+
+
+class LLMConfigurationError(LLMProviderError):
+    code = "LLM_CONFIGURATION_INVALID"
+
+
+class LLMOutputError(LLMProviderError):
+    code = "LLM_OUTPUT_INVALID"
+
+    def __init__(self, *, usage: "ProviderUsage | None" = None) -> None:
+        super().__init__(self.public_message)
+        self.usage = usage
+
+
+class LLMRefusalError(LLMOutputError):
+    code = "LLM_REFUSED"
+
+
+class LLMIncompleteError(LLMOutputError):
+    code = "LLM_RESPONSE_INCOMPLETE"
+
+
+class LLMOutputLimitError(LLMIncompleteError):
+    code = "LLM_OUTPUT_LIMIT"
 
 
 class RunClaimedError(ApplicationError):

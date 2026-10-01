@@ -24,6 +24,15 @@ LOG_FIELDS = (
     "stage",
     "status",
     "duration_ms",
+    "attribution_id",
+    "provider",
+    "model",
+    "prompt_version",
+    "response_id",
+    "input_tokens",
+    "output_tokens",
+    "reasoning_tokens",
+    "latency_ms",
 )
 
 
@@ -76,6 +85,7 @@ def configure_logging(settings: Settings) -> None:
         broker_url,
         make_url(database_url).password or "",
         unquote(urlsplit(broker_url).password or ""),
+        settings.openai_api_key.get_secret_value() if settings.openai_api_key else "",
     )
     handler = logging.StreamHandler(sys.stderr)
     handler.setFormatter(JsonFormatter(secrets))
@@ -89,3 +99,6 @@ def configure_logging(settings: Settings) -> None:
     # Request middleware logs status and duration without URLs, query strings, or bodies.
     logging.getLogger("uvicorn.access").disabled = True
     logging.getLogger("sqlalchemy.engine").setLevel(logging.WARNING)
+    # SDK debug logging can include request bodies; never inherit application DEBUG.
+    for name in ("openai", "httpx", "httpcore"):
+        logging.getLogger(name).setLevel(logging.WARNING)

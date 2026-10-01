@@ -5,14 +5,14 @@ The planned pipeline preserves a failed trace, normalizes it, attributes the
 failure, constructs a RegressionSpec, compiles PyTest, and validates it in isolation.
 
 **Current scope:** failed-trace submission, exact source-byte persistence, asynchronous
-Who&When normalization, retrieval of durable processing state, and deterministic
-analysis context management. No generated Python is executed.
+Who&When normalization, deterministic analysis context management, and explicitly
+requested, structured OpenAI failure attribution. No generated Python is executed.
 
 ## Architecture
 
 A modular monolith: FastAPI handles transport, services own workflows and
 transactions, SQLAlchemy owns persistence, and integrations isolate external
-systems. Celery workers call the normalization service through a thin task function.
+systems. Thin Celery tasks call normalization and attribution services.
 
 PostgreSQL is authoritative. RabbitMQ transports tasks; Celery results are disabled.
 Submission commits the original trace before publishing an ID-only task and
@@ -26,14 +26,15 @@ app/
     v1/                      Versioned route boundary
   core/                      Settings, application errors, JSON logging
   db/
-    models/                  Run and TraceStep
+    models/                  Run, TraceStep, Attribution, AttributionEvidence
     base.py, session.py      Metadata, engine and session lifecycle
   schemas/                   Validated contracts; no ORM responses
   services/                  Submission, normalization, context, persistence, readiness
   integrations/
     broker.py                AMQP readiness/error translation
     traces/                  Pure Who&When trace adapter
-    llm/, execution/         Future integration boundaries
+    llm/                     Responses API integration and LLMClient protocol
+    execution/               Future isolated validation boundary
   workers/                   Celery configuration and correlation signals
 alembic/versions/             Reviewed, explicit database migrations
 tests/unit/                  No infrastructure or paid API calls
@@ -102,7 +103,8 @@ uv run celery -A app.workers.celery_app:celery_app worker --loglevel=INFO
 On Windows, use `docker compose up -d worker` for the Linux worker. Celery does not
 officially support [Windows workers](https://docs.celeryq.dev/en/main/faq.html#windows). The host API is supported on Windows.
 
-The worker registers `traceguard.process_run`. To check its control connection:
+The worker registers `traceguard.process_run` and `traceguard.attribute_run`.
+Normalization never triggers attribution automatically. To check its control connection:
 
 ```sh
 docker compose exec worker celery -A app.workers.celery_app:celery_app inspect ping
@@ -116,6 +118,8 @@ docker compose exec worker celery -A app.workers.celery_app:celery_app inspect p
 | `GET /ready` | HTTP 200 after PostgreSQL query and authenticated RabbitMQ connection; HTTP 503 on dependency failure |
 | `POST /api/v1/runs?source=...` | HTTP 202 after durable submission and task publication |
 | `GET /api/v1/runs/{run_id}` | Processing state, timestamps, safe failure code, normalized step count |
+| `POST /api/v1/runs/{run_id}/attributions` | Explicit attribution; HTTP 202 for a new queued operation, HTTP 200 for an existing operation |
+| `GET /api/v1/attributions/{attribution_id}` | Attribution state, decision, evidence, usage, and safe audit metadata |
 | `GET /docs` | Swagger UI |
 | `GET /redoc` | ReDoc |
 | `GET /openapi.json` | OpenAPI schema |
@@ -157,18 +161,23 @@ Database and broker URLs are required and masked in settings representations.
 | `WORKER_CONCURRENCY` | `2` |
 | `NORMALIZATION_TIMEOUT_SECONDS` | `60`; soft limit; hard limit +10s and claim lease +30s |
 | `ANALYSIS_CONTEXT__BUDGET` | `65536`; complete AnalysisContext JSON budget in UTF-8 bytes |
-| `ANALYSIS_CONTEXT__RESERVED_HEADROOM` | `4096`; reserved for future attribution request overhead; must be less than budget |
+| `ANALYSIS_CONTEXT__RESERVED_HEADROOM` | `4096`; reserved for attribution request overhead; must be less than budget |
 | `ANALYSIS_CONTEXT__HEAD_STEPS` | `2`; desired beginning window, at least 1 |
 | `ANALYSIS_CONTEXT__TAIL_STEPS` | `4`; desired final window, at least 1 |
 | `ANALYSIS_CONTEXT__NEIGHBOUR_STEPS` | `1`; neighbours outside each two-speaker transition, at least 1 |
+| `OPENAI_API_KEY` | Optional secret; required only when a real attribution is processed |
+| `OPENAI_MODEL` | `gpt-5.6-luna`; captured when attribution is submitted |
+| `OPENAI_REASONING_EFFORT` | `medium`; captured when attribution is submitted |
+| `OPENAI_TIMEOUT_SECONDS` | `60`; provider timeout; worker soft/hard limits +30/+40s, claim lease +60s |
+| `OPENAI_MAX_OUTPUT_TOKENS` | `4096`; bounded output, including reasoning tokens |
 | `POSTGRES_USER`, `POSTGRES_PASSWORD`, `POSTGRES_DB` | Compose initialization; match host URL credentials |
 | `RABBITMQ_DEFAULT_USER`, `RABBITMQ_DEFAULT_PASS`, `RABBITMQ_DEFAULT_VHOST` | Compose initialization; match host URL credentials |
 | `TEST_DATABASE_URL`, `TEST_RABBITMQ_URL` | Optional integration-test connections |
 
 Compose substitutes container hostnames while the example URLs address localhost.
 Changing initialization credentials does not update already initialized volumes.
-Application version comes from project package metadata. LLM and sandbox settings
-will be added when used.
+Application version comes from project package metadata. The API and offline tests
+start without an OpenAI key. Sandbox settings remain deferred.
 
 ## Persistence and migrations
 
@@ -197,8 +206,12 @@ Failure recording uses a fresh, conditional transaction and is repeatable.
 SQL parameters are hidden. API lifespan disposes its engine; workers create
 engines inside task execution, after forking.
 
-Attribution, AttributionEvidence, RegressionSpec, GeneratedTest, and ValidationResult
-are deferred until their contracts and cardinalities can be validated.
+Migration `0003` creates one unique Attribution per Run, with a separate lifecycle,
+structured decision columns, ownership/attempt fields, provider usage, timestamps,
+and safe audit metadata. AttributionEvidence rows contain inclusive canonical
+sequence ranges, short reasons, ordering, and an explicit truncated-evidence flag.
+The decisive sequence has a composite foreign key to the Run's canonical TraceStep.
+Evidence content remains in TraceSteps. RegressionSpec and later tables are deferred.
 
 ```sh
 uv run alembic upgrade head
@@ -244,8 +257,8 @@ uv run pytest -m integration
 The database name must end in `_test`. PostgreSQL tests migrate and remove only
 their own random schema. They verify real BYTEA/JSONB persistence, constraints,
 rollback, durable failure recording, migration upgrade/downgrade, and schema drift.
-The live worker test publishes an ID-only task to its own RabbitMQ queue and checks
-the normalized result in PostgreSQL. Unit tests do not use infrastructure.
+Worker tests publish ID-only tasks to their own RabbitMQ queues and check normalized
+and fake-provider attribution results in PostgreSQL. Unit tests do not use infrastructure.
 
 ## Trace normalization
 
@@ -407,7 +420,7 @@ Temporary database failures get at most three delayed Celery retries. Permanent 
 failures are recorded without retry. Unexpected workflow errors are logged, recorded
 with a safe code, and raised. Soft timeouts record failure where PostgreSQL is
 available; hard process loss requeues the task and recovery waits for lease expiry.
-Keep Compose shutdown grace above the configured hard timeout (default grace: 90s).
+Keep Compose shutdown grace above the configured hard timeout (default grace: 120s).
 
 There is deliberately no outbox or automatic recovery scheduler. Process death
 between the initial commit and publication may leave a visible `pending` Run.
@@ -425,11 +438,104 @@ and steps but removes normalized task/claim fields and marks phase-2 states fail
 with `SCHEMA_DOWNGRADED`. Restoring the schema does not resume those terminal runs.
 HTTP submission itself is not deduplicated: a repeated POST creates a new Run.
 
+## Explicit failure attribution
+
+After a Run reaches `normalized`, request attribution explicitly:
+
+```sh
+curl -i -X POST http://127.0.0.1:8000/api/v1/runs/<run_uuid>/attributions
+curl http://127.0.0.1:8000/api/v1/attributions/<attribution_uuid>
+```
+
+A new request returns HTTP 202 with `id`, `run_id`, `status="queued"`, and a
+`Location` header. Repeated requests return the same operation with HTTP 200 and
+its current status; they never enqueue another paid call. Unknown IDs return safe
+404 errors; a non-normalized Run returns `RUN_NOT_NORMALIZED` / HTTP 409. Queue
+failure preserves the Attribution, records `QUEUE_PUBLICATION_FAILED`, and returns
+HTTP 503 with `error.run_id` and `error.attribution_id`.
+
+The worker claims the Attribution, loads the canonical trace, uses the existing
+ContextManager, constructs deterministic evidence input, and records its SHA-256
+digest and safe visibility manifest before inference. The provider-independent
+`LLMClient.attribute(request)` returns an `LLMResult` containing an
+`AttributionDecision` and usage. Only the OpenAI integration imports the official SDK.
+It uses Responses with a strict Pydantic-derived JSON schema, `store=False`, no
+tools, no SDK retries, and no automatic provider-side input truncation.
+
+Prompt `attribution-v1` treats the entire supplied trace as untrusted evidence.
+It asks for a short grounded diagnosis, original canonical sequences, inclusive
+evidence ranges, and abstention when visible evidence is insufficient. It requests
+no chain-of-thought. Only task/source, visible steps, analytical metadata,
+omissions, and explicit truncation representations enter the evidence document.
+Benchmark labels never enter from Who&When records. Structured label/credential
+fields in selected canonical payloads are rejected before any provider call;
+unrelated metadata is omitted. Partial JSON excerpts with unknown metadata fail
+closed because that metadata cannot be reliably filtered. Such inputs need a
+larger context budget or supported analytical metadata. This is not a general
+secret detector: developers must avoid putting credentials in free-text traces.
+
+`decision="attributed"` requires a visible agent, a visible decisive canonical
+sequence, and evidence covering that sequence. Every sequence in each ordered,
+non-overlapping range must exist and have been visible. Invalid references are
+rejected without repair. Truncated visible steps can be cited and remain marked.
+`decision="abstain"` requires null agent, sequence, and category plus a concise
+reason; it completes successfully. Category is optional, with no imposed taxonomy.
+The explanation is a diagnosis, not a private reasoning transcript.
+
+The Attribution lifecycle is `pending → queued → processing → completed / failed`;
+Run remains `normalized`. Result and evidence commit together. Unique Run ownership,
+row locks, expiring claim tokens, terminal no-ops, and evidence uniqueness fence
+duplicates and stale workers. Transient network, timeout, rate-limit, provider 5xx,
+and database failures get up to three delayed Celery retries (2/4/8s); four durable
+claims bound crash redelivery. Busy duplicates wait for lease expiry, up to six
+retries. Configuration/authentication/quota, refusal, incomplete/output-limit,
+schema, and semantic failures are safe terminal failures, never forced guesses.
+
+GET includes configured and response model, prompt version, response ID, input,
+output and reasoning tokens, latency, timestamps, failure code, input digest, and
+a visibility/truncation/omission manifest. It exposes no prompts, trace bodies,
+ownership tokens, API keys, or reasoning transcripts. Usage describes the latest
+returned attempt, not cumulative billing. A crash or uncertain timeout after a paid
+request can cause a bounded repeat call; PostgreSQL guarantees one persisted result,
+not exactly-once execution at an external provider. Context policy is read by the
+worker; avoid changing it during retries if identical input is required.
+
+There is no outbox or recovery scheduler. An operator may republish a stranded
+pending/queued/expired operation using its original ID:
+
+```sh
+uv run celery -A app.workers.celery_app:celery_app call traceguard.attribute_run --kwargs '{"attribution_id":"<uuid>"}'
+```
+
+Terminal operations are no-ops; repeated POST does not reset failed operations.
+Stop workers before downgrading `0003`; downgrade removes attribution results and
+evidence while preserving normalized Runs, raw traces, and TraceSteps.
+
+## Optional one-request live test
+
+Normal tests use FakeLLMClient or the official SDK with an in-memory HTTP transport.
+No paid call runs without explicit opt-in. Set an OpenAI key through the environment
+or your uncommitted `.env`, configure `TEST_DATABASE_URL`, then run:
+
+```sh
+RUN_LIVE_LLM_TESTS=true uv run pytest tests/integration/test_live_attribution.py -q
+```
+
+PowerShell:
+
+```powershell
+$env:RUN_LIVE_LLM_TESTS = "true"
+uv run pytest tests/integration/test_live_attribution.py -q
+Remove-Item Env:RUN_LIVE_LLM_TESTS
+```
+
+This makes one request with `gpt-5.6-luna` / `medium` against the smallest committed
+Algorithm-Generated fixture record, stripped of evaluation fields. It verifies
+structured output, semantic references, persistence, and usage. It does not score
+accuracy or retry the request. Missing key or opt-in skips the test.
+
 ## Next phase
 
-Phase 4 can consume `AnalysisContext` and use original canonical sequences and
-inclusive ranges for structured evidence references. It must account for omissions
-and explicitly incomplete excerpts, validate references against full canonical
-evidence, and support uncertainty/review outcomes. Provider integrations, attribution,
-RegressionSpec, PyTest compilation, isolated validation, benchmark evaluation,
-authentication, and frontend work remain deferred.
+Phase 5 can derive a structured RegressionSpec from a validated attribution.
+RegressionSpec, PyTest compilation, isolated validation, benchmark scoring, model
+comparison, authentication, and frontend work remain deferred.
