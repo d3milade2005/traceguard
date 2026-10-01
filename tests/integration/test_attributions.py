@@ -23,7 +23,7 @@ from app.core.exceptions import (
 )
 from app.core.run_status import RunStatus
 from app.db.models import Attribution, TraceStep
-from app.integrations.task_queue import CeleryAttributionPublisher
+from app.integrations.task_queue import CeleryAttributionPublisher, CeleryRunPublisher
 from app.integrations.traces.sources import trace_adapters
 from app.main import create_app
 from app.schemas.attributions import ProviderUsage
@@ -34,6 +34,7 @@ from app.services.attributions import AttributionStore
 from app.services.context import ContextManager
 from app.services.normalization import NormalizationService
 from app.services.runs import RunService
+from app.services.submission import SubmissionService
 from app.workers.factory import create_celery_app
 from tests.fakes import FakeLLMClient
 
@@ -390,14 +391,15 @@ def test_migration_schema_constraints_and_downgrade_preserve_canonical_evidence(
 
 
 def test_real_api_and_celery_rabbitmq_worker_with_fake_llm(
-    attribution_setup, integration_settings, monkeypatch
+    postgres, integration_settings, monkeypatch
 ):
     if integration_settings.test_rabbitmq_url is None:
         pytest.skip("Set TEST_RABBITMQ_URL for the attribution worker smoke test")
-    run_id, _, store, _, fake, _ = attribution_setup
+    _, sessions, _ = postgres
     settings = get_settings().model_copy(
         update={"rabbitmq_url": integration_settings.test_rabbitmq_url}
     )
+    fake = FakeLLMClient()
     monkeypatch.setattr(
         "app.workers.attribution_tasks.OpenAILLMClient", lambda *args, **kwargs: fake
     )
@@ -417,8 +419,30 @@ def test_real_api_and_celery_rabbitmq_worker_with_fake_llm(
             ),
             TestClient(create_app(settings)) as client,
         ):
+            runs = RunService(sessions, settings.max_request_body_bytes)
+            store = AttributionStore(sessions)
+            client.app.state.runs = runs
+            client.app.state.submission = SubmissionService(
+                runs, CeleryRunPublisher(app, 3), trace_adapters()
+            )
             client.app.state.attributions = store
             client.app.state.attribution_publisher = CeleryAttributionPublisher(app, 3)
+            response = client.post(
+                "/api/v1/runs?source=who_when.algorithm_generated",
+                content=RAW,
+                headers={"Content-Type": "application/json"},
+            )
+            assert response.status_code == 202
+            run_location = response.headers["location"]
+            deadline = time.monotonic() + 20
+            while time.monotonic() < deadline:
+                run_result = client.get(run_location).json()
+                if run_result["status"] in {"normalized", "failed"}:
+                    break
+                time.sleep(0.05)
+            assert run_result["status"] == "normalized"
+            run_id = response.json()["id"]
+
             response = client.post(f"/api/v1/runs/{run_id}/attributions")
             assert response.status_code == 202
             location = response.headers["location"]
@@ -429,6 +453,10 @@ def test_real_api_and_celery_rabbitmq_worker_with_fake_llm(
                     break
                 time.sleep(0.05)
             assert result["status"] == "completed"
+            assert result["evidence"][0]["start_sequence"] == 0
             assert len(fake.requests) == 1
+            assert client.post(f"/api/v1/runs/{run_id}/attributions").status_code == 200
+            assert len(fake.requests) == 1
+            assert runs.get(run_id).original_trace == RAW
     finally:
         app.close()

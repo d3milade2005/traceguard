@@ -54,6 +54,10 @@ generic repository, or simulated processing task.
 
 Run commands from the repository root:
 
+For a complete host or Docker walkthrough that submits a trace, waits for
+normalization, requests attribution, and reads the result, see
+[E2E_RUNBOOK.md](E2E_RUNBOOK.md).
+
 ```sh
 python -m pip install uv
 uv sync --locked
