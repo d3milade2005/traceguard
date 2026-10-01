@@ -7,6 +7,8 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 from sqlalchemy.engine import make_url
 from sqlalchemy.exc import ArgumentError
 
+from app.core.context import ContextPolicy
+
 
 class Settings(BaseSettings):
     model_config = SettingsConfigDict(
@@ -14,6 +16,7 @@ class Settings(BaseSettings):
         env_file_encoding="utf-8",
         extra="ignore",
         hide_input_in_errors=True,
+        env_nested_delimiter="__",
     )
 
     app_name: str = Field(default="Traceguard", min_length=1)
@@ -31,6 +34,7 @@ class Settings(BaseSettings):
     worker_concurrency: int = Field(default=2, ge=1, le=64)
 
     normalization_timeout_seconds: int = Field(default=60, ge=10, le=600)
+    analysis_context: ContextPolicy = Field(default_factory=ContextPolicy)
 
     @field_validator("database_url")
     @classmethod

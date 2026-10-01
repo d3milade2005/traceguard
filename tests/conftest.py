@@ -5,6 +5,7 @@ from fastapi import FastAPI
 from fastapi.testclient import TestClient
 
 from app.core.config import Settings, get_settings
+from app.core.context import ContextPolicy
 from app.main import create_app
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -16,6 +17,8 @@ TEST_BROKER = "amqp://test:test@127.0.0.1:1/traceguard"
 def isolated_config(monkeypatch: pytest.MonkeyPatch, tmp_path: Path):
     for name in Settings.model_fields:
         monkeypatch.delenv(name.upper(), raising=False)
+    for name in ContextPolicy.model_fields:
+        monkeypatch.delenv(f"ANALYSIS_CONTEXT__{name.upper()}", raising=False)
     monkeypatch.chdir(tmp_path)
     monkeypatch.setenv("DATABASE_URL", TEST_DATABASE)
     monkeypatch.setenv("RABBITMQ_URL", TEST_BROKER)

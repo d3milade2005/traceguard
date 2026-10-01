@@ -23,6 +23,16 @@ class InvalidTraceError(ApplicationError):
     public_message = "The trace exceeds the configured size limit."
 
 
+class RunNotNormalizedError(ApplicationError):
+    code = "RUN_NOT_NORMALIZED"
+    public_message = "The run does not yet have a complete canonical trace."
+
+
+class ContextBudgetError(ApplicationError):
+    code = "CONTEXT_BUDGET_TOO_SMALL"
+    public_message = "The analysis budget cannot hold the task and minimum evidence context."
+
+
 class TraceAdapterError(ApplicationError):
     code = "TRACE_ADAPTER_ERROR"
     public_message = "The trace structure is invalid or unsupported."

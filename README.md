@@ -5,8 +5,8 @@ The planned pipeline preserves a failed trace, normalizes it, attributes the
 failure, constructs a RegressionSpec, compiles PyTest, and validates it in isolation.
 
 **Current scope:** failed-trace submission, exact source-byte persistence, asynchronous
-Who&When normalization, and retrieval of durable processing state. No generated
-Python is executed.
+Who&When normalization, retrieval of durable processing state, and deterministic
+analysis context management. No generated Python is executed.
 
 ## Architecture
 
@@ -29,7 +29,7 @@ app/
     models/                  Run and TraceStep
     base.py, session.py      Metadata, engine and session lifecycle
   schemas/                   Validated contracts; no ORM responses
-  services/                  Submission, normalization, persistence, readiness
+  services/                  Submission, normalization, context, persistence, readiness
   integrations/
     broker.py                AMQP readiness/error translation
     traces/                  Pure Who&When trace adapter
@@ -156,6 +156,11 @@ Database and broker URLs are required and masked in settings representations.
 | `DEPENDENCY_TIMEOUT_SECONDS` | `3`; connection/pool/query readiness limits |
 | `WORKER_CONCURRENCY` | `2` |
 | `NORMALIZATION_TIMEOUT_SECONDS` | `60`; soft limit; hard limit +10s and claim lease +30s |
+| `ANALYSIS_CONTEXT__BUDGET` | `65536`; complete AnalysisContext JSON budget in UTF-8 bytes |
+| `ANALYSIS_CONTEXT__RESERVED_HEADROOM` | `4096`; reserved for future attribution request overhead; must be less than budget |
+| `ANALYSIS_CONTEXT__HEAD_STEPS` | `2`; desired beginning window, at least 1 |
+| `ANALYSIS_CONTEXT__TAIL_STEPS` | `4`; desired final window, at least 1 |
+| `ANALYSIS_CONTEXT__NEIGHBOUR_STEPS` | `1`; neighbours outside each two-speaker transition, at least 1 |
 | `POSTGRES_USER`, `POSTGRES_PASSWORD`, `POSTGRES_DB` | Compose initialization; match host URL credentials |
 | `RABBITMQ_DEFAULT_USER`, `RABBITMQ_DEFAULT_PASS`, `RABBITMQ_DEFAULT_VHOST` | Compose initialization; match host URL credentials |
 | `TEST_DATABASE_URL`, `TEST_RABBITMQ_URL` | Optional integration-test connections |
@@ -276,6 +281,81 @@ question. Malformed trace structure raises `TraceAdapterError`; empty history is
 rejected, while empty message content is retained. The adapter does not persist
 or replace the source, and never copies unknown source fields into metadata.
 
+## Analysis context management
+
+`ContextManager` accepts a complete `CanonicalTrace` and returns a temporary
+`AnalysisContext`. It has no database, HTTP, Celery, framework-adapter, or provider
+dependencies. `RunService.canonical_trace()` loads and validates all persisted steps
+in sequence order for a normalized run; it performs no writes and uses the stored
+Run source identity. The existing worker still ends at `normalized`. There is no
+context persistence, new processing state, or context API endpoint in this phase.
+
+```python
+from app.core.config import get_settings
+from app.services.context import ContextManager
+
+# runs is an existing RunService; run_id identifies a normalized persisted run.
+trace = runs.canonical_trace(run_id)
+context = ContextManager(get_settings().analysis_context).build(trace, run_id=run_id)
+```
+
+The contract contains optional run identity, source, the unchanged original task,
+ordered selected steps, `full_trace_used`, inclusive `omitted_ranges`, and statistics.
+Statistics record original/selected step counts, original/selected estimated sizes,
+budget, reserved headroom, effective budget, size units, and pruning. Selected steps
+retain their original sequences. For example, sequences `3, 4, 9, 10, 11` remain
+those sequences; they are not assigned new positions. `SequenceRange(start=21,
+end=24)` refers to canonical steps 21 through 24 inclusively. Gaps are explicit so
+later evidence consumers cannot assume selected messages were adjacent.
+
+The default `UTF8SizeEstimator` counts the **entire serialized AnalysisContext JSON**,
+including task, identity, steps, omissions, excerpt metadata, and statistics. It is
+a deterministic byte estimator, not a model token counter. It also counts JSON
+escaping and multibyte Unicode. The default effective limit is 61,440 bytes after
+4,096 bytes of headroom. A small injected `SizeEstimator` protocol permits a future
+replacement; any replacement must be deterministic and monotonic, and its budget
+must use its reported units. No provider or tokenizer dependency is introduced.
+
+Selection follows a fixed structural policy:
+
+1. Return every canonical step unchanged when the complete context fits.
+2. Otherwise reserve the first and last steps, sharing available space if excerpts
+   are necessary. For a one-step trace this is a single anchor.
+3. Grow the beginning and final windows alternately, one adjacent whole step at a
+   time, up to their configured sizes. Stop growing a side when its next step cannot
+   fit; do not jump over that step.
+4. Consider agent-identity changes from most recent to oldest. Each candidate
+   includes both sides of the change and the configured outside neighbours. Add
+   the entire window only if it fits, reusing overlap with already selected steps.
+
+The strategy does not inspect message meaning, status, error text, or benchmark
+labels to guess the faulty step. Desired windows are best effort under the budget.
+Some capacity may remain unused when the next complete window cannot fit. There
+is no guarantee that the future decisive failure step is selected.
+
+Whole selected steps remain canonical `TraceStep` objects. An endpoint that cannot
+fit with the other required evidence may instead become `TruncatedTraceStep`, with
+`representation="serialized_excerpt"`, its original sequence/agent/event identity,
+beginning/end fragments of its canonical JSON, and original/selected sizes. The
+prefix gets the extra character for odd retained lengths. Binary search retains
+the largest fragment pair that fits its allocation. Fragments may contain partial
+JSON and must not be treated as a complete canonical payload or complete evidence.
+This also handles oversized structured payloads and metadata without inventing
+replacement JSON values. `full_trace_used` is false for any excerpt or omission.
+
+The original task and minimum endpoint identities/envelope must fit. If they cannot,
+the service raises `ContextBudgetError` (`CONTEXT_BUDGET_TOO_SMALL`) rather than
+silently shortening the task or losing all evidence. Increasing the configured
+budget is required for those inputs. Returned JSON payloads are deep copies: even
+consumer mutations cannot modify the input canonical trace or ORM data. No raw
+trace bytes, source steps, or stored sequences are replaced.
+
+Unit tests cover full and bounded contexts, transition/endpoint windows, exact
+serialized accounting, oversized steps, mutable JSON isolation, configuration,
+contract invariants, and all committed Who&When fixture records. PostgreSQL
+integration tests exercise persisted normalized traces through the read-only loader
+and verify raw bytes, canonical steps, and Run state remain unchanged.
+
 ## Submit a failed trace
 
 Create a UTF-8 file named `failed-trace.json` containing only production trace fields:
@@ -347,9 +427,9 @@ HTTP submission itself is not deduplicated: a repeated POST creates a new Run.
 
 ## Next phase
 
-Define the non-destructive analysis-context contract and evidence references before
-attribution. Keep canonical step positions and original evidence unchanged.
-
-Context selection, LLM providers, attribution, RegressionSpec, PyTest compilation,
-isolated validation, benchmark evaluation, authentication, and frontend work remain
-deferred.
+Phase 4 can consume `AnalysisContext` and use original canonical sequences and
+inclusive ranges for structured evidence references. It must account for omissions
+and explicitly incomplete excerpts, validate references against full canonical
+evidence, and support uncertainty/review outcomes. Provider integrations, attribution,
+RegressionSpec, PyTest compilation, isolated validation, benchmark evaluation,
+authentication, and frontend work remain deferred.

@@ -6,9 +6,11 @@ from uuid import UUID
 from sqlalchemy import func, select, update
 from sqlalchemy.orm import Session, sessionmaker
 
-from app.core.exceptions import InvalidTraceError, RunNotFoundError
+from app.core.exceptions import InvalidTraceError, RunNotFoundError, RunNotNormalizedError
 from app.db.models import Run, RunStatus, TraceStep
 from app.schemas.runs import RunCreate, RunRecord, RunSummary
+from app.schemas.traces import CanonicalTrace
+from app.schemas.traces import TraceStep as CanonicalStep
 
 logger = logging.getLogger(__name__)
 
@@ -66,6 +68,30 @@ class RunService:
             if run is None:
                 raise RunNotFoundError
             return RunRecord.model_validate(run)
+
+    def canonical_trace(self, run_id: UUID) -> CanonicalTrace:
+        """Load complete persisted evidence without exposing ORM objects to selection."""
+        with self.sessions() as session:
+            row = session.execute(
+                select(Run.source, Run.task, Run.status).where(Run.id == run_id)
+            ).one_or_none()
+            if row is None:
+                raise RunNotFoundError
+            if row.status != RunStatus.NORMALIZED or row.task is None:
+                raise RunNotNormalizedError
+            steps = session.scalars(
+                select(TraceStep).where(TraceStep.run_id == run_id).order_by(TraceStep.sequence)
+            ).all()
+            return CanonicalTrace(
+                source=row.source,
+                task=row.task,
+                steps=tuple(
+                    CanonicalStep.model_validate(
+                        {name: getattr(step, name) for name in CanonicalStep.model_fields}
+                    )
+                    for step in steps
+                ),
+            )
 
     def record_failure(self, run_id: UUID, code: str) -> bool:
         """Persist a safe failure code in a fresh transaction; repeated calls are harmless."""

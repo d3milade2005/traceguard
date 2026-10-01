@@ -4,6 +4,7 @@ import pytest
 from pydantic import ValidationError
 
 from app.core.config import Settings, get_settings
+from app.core.context import ContextPolicy
 
 
 def test_missing_critical_configuration(monkeypatch):
@@ -51,3 +52,29 @@ def test_dotenv_loading_and_environment_precedence(tmp_path: Path, monkeypatch):
     assert settings.log_level == "WARNING"
     assert settings.cors_allowed_origins == ["http://localhost:3000"]
     assert get_settings() is get_settings()
+
+
+def test_context_defaults_and_nested_environment_configuration(monkeypatch):
+    assert Settings().analysis_context == ContextPolicy()
+    monkeypatch.setenv("ANALYSIS_CONTEXT__BUDGET", "12000")
+    monkeypatch.setenv("ANALYSIS_CONTEXT__RESERVED_HEADROOM", "1000")
+    monkeypatch.setenv("ANALYSIS_CONTEXT__HEAD_STEPS", "3")
+    assert Settings().analysis_context.budget == 12000
+    assert Settings().analysis_context.effective_budget == 11000
+    assert Settings().analysis_context.head_steps == 3
+
+
+@pytest.mark.parametrize(
+    "options",
+    [
+        {"budget": 0},
+        {"reserved_headroom": -1},
+        {"budget": 100, "reserved_headroom": 100},
+        {"head_steps": 0},
+        {"tail_steps": 0},
+        {"neighbour_steps": 0},
+    ],
+)
+def test_invalid_context_configuration_is_rejected(options):
+    with pytest.raises(ValidationError):
+        Settings(analysis_context=options)
