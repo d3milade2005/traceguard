@@ -10,6 +10,7 @@ class ErrorDetail(BaseModel):
     request_id: str
     run_id: UUID | None = None
     attribution_id: UUID | None = None
+    regression_spec_id: UUID | None = None
 
 
 class ErrorResponse(BaseModel):

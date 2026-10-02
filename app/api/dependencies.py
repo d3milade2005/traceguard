@@ -2,9 +2,10 @@ from typing import cast
 
 from fastapi import Request
 
-from app.integrations.task_queue import CeleryAttributionPublisher
+from app.integrations.task_queue import CeleryAttributionPublisher, CeleryRegressionPublisher
 from app.services.attributions import AttributionStore
 from app.services.readiness import ReadinessService
+from app.services.regression_specs import RegressionStore
 from app.services.runs import RunService
 from app.services.submission import SubmissionService
 
@@ -27,3 +28,11 @@ def get_attribution_store(request: Request) -> AttributionStore:
 
 def get_attribution_publisher(request: Request) -> CeleryAttributionPublisher:
     return cast(CeleryAttributionPublisher, request.app.state.attribution_publisher)
+
+
+def get_regression_store(request: Request) -> RegressionStore:
+    return cast(RegressionStore, request.app.state.regression_specs)
+
+
+def get_regression_publisher(request: Request) -> CeleryRegressionPublisher:
+    return cast(CeleryRegressionPublisher, request.app.state.regression_publisher)

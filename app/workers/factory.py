@@ -47,4 +47,7 @@ def create_celery_app(settings: Settings) -> Celery:
     from app.workers.attribution_tasks import register_attribution_task
 
     register_attribution_task(app, settings)
+    from app.workers.regression_tasks import register_regression_task
+
+    register_regression_task(app, settings)
     return app

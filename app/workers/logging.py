@@ -31,6 +31,8 @@ def bind_task_context(
         context["run_id"] = str(kwargs["run_id"])
     if kwargs and isinstance(kwargs.get("attribution_id"), str):
         context["attribution_id"] = str(kwargs["attribution_id"])
+    if kwargs and isinstance(kwargs.get("regression_spec_id"), str):
+        context["regression_spec_id"] = str(kwargs["regression_spec_id"])
     log_context.set(context)
 
 

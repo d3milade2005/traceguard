@@ -123,3 +123,31 @@ class RunClaimedError(ApplicationError):
     def __init__(self, retry_after: int) -> None:
         super().__init__("Run is already being processed")
         self.retry_after = retry_after
+
+
+class RegressionNotFoundError(ApplicationError):
+    code = "REGRESSION_SPEC_NOT_FOUND"
+    public_message = "The requested regression specification does not exist."
+
+
+class AttributionNotCompletedError(ApplicationError):
+    code = "ATTRIBUTION_NOT_COMPLETED"
+    public_message = "Regression synthesis requires a completed attribution."
+
+
+class RegressionValidationError(ApplicationError):
+    code = "REGRESSION_SPEC_INVALID"
+    public_message = "The regression specification is not safely grounded in canonical evidence."
+
+
+class RegressionInputError(ApplicationError):
+    code = "REGRESSION_INPUT_INVALID"
+    public_message = "Regression evidence cannot be safely supplied for synthesis."
+
+
+class RegressionQueuePublishError(QueuePublishError):
+    public_message = "The regression specification was preserved but could not be queued."
+
+    def __init__(self, *, regression_spec_id: UUID) -> None:
+        super().__init__()
+        self.regression_spec_id = regression_spec_id

@@ -1,7 +1,8 @@
 import time
+from typing import TypeVar
 
 from openai import APIConnectionError, APIStatusError, APITimeoutError, OpenAI, RateLimitError
-from pydantic import SecretStr, ValidationError
+from pydantic import BaseModel, SecretStr, ValidationError
 
 from app.core.exceptions import (
     LLMConfigurationError,
@@ -18,6 +19,9 @@ from app.schemas.attributions import (
     LLMResult,
     ProviderUsage,
 )
+from app.schemas.regression_specs import RegressionRequest, RegressionResult, RegressionSpec
+
+T = TypeVar("T", bound=BaseModel)
 
 
 class OpenAILLMClient:
@@ -31,6 +35,14 @@ class OpenAILLMClient:
         self.max_output_tokens = max_output_tokens
 
     def attribute(self, request: AttributionRequest) -> LLMResult:
+        decision, usage = self._generate(request, AttributionDecision)
+        return LLMResult(attribution=decision, usage=usage)
+
+    def generate(self, request: RegressionRequest) -> RegressionResult:
+        spec, usage = self._generate(request, RegressionSpec)
+        return RegressionResult(spec=spec, usage=usage)
+
+    def _generate(self, request: AttributionRequest, contract: type[T]) -> tuple[T, ProviderUsage]:
         if self.api_key is None or not self.api_key.get_secret_value().strip():
             raise LLMConfigurationError
         started = time.monotonic()
@@ -51,9 +63,9 @@ class OpenAILLMClient:
                     text={
                         "format": {
                             "type": "json_schema",
-                            "name": "AttributionDecision",
+                            "name": contract.__name__,
                             "strict": True,
-                            "schema": AttributionDecision.model_json_schema(),
+                            "schema": contract.model_json_schema(),
                         }
                     },
                     store=False,
@@ -106,7 +118,7 @@ class OpenAILLMClient:
         if not response.output_text:
             raise LLMOutputError(usage=usage)
         try:
-            attribution = AttributionDecision.model_validate_json(response.output_text)
+            parsed = contract.model_validate_json(response.output_text)
         except ValidationError as exc:
             raise LLMOutputError(usage=usage) from exc
-        return LLMResult(attribution=attribution, usage=usage)
+        return parsed, usage

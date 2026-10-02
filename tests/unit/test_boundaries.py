@@ -70,6 +70,7 @@ def test_celery_configuration_and_normalization_task(settings):
     assert {name for name in celery.tasks if not name.startswith("celery.")} == {
         "traceguard.process_run",
         "traceguard.attribute_run",
+        "traceguard.generate_regression_spec",
     }
     assert celery.tasks["traceguard.process_run"].reject_on_worker_lost
     assert "traceguard" in celery.amqp.queues

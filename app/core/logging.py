@@ -25,6 +25,7 @@ LOG_FIELDS = (
     "status",
     "duration_ms",
     "attribution_id",
+    "regression_spec_id",
     "provider",
     "model",
     "prompt_version",

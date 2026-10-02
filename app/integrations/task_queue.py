@@ -2,8 +2,13 @@ from uuid import UUID
 
 from celery import Celery
 
-from app.core.exceptions import AttributionQueuePublishError, QueuePublishError
+from app.core.exceptions import (
+    AttributionQueuePublishError,
+    QueuePublishError,
+    RegressionQueuePublishError,
+)
 from app.workers.attribution_tasks import ATTRIBUTION_TASK_NAME
+from app.workers.regression_tasks import REGRESSION_TASK_NAME
 from app.workers.tasks import TASK_NAME
 
 
@@ -45,3 +50,22 @@ class CeleryAttributionPublisher:
             )
         except Exception as exc:
             raise AttributionQueuePublishError(attribution_id=attribution_id) from exc
+
+
+class CeleryRegressionPublisher:
+    def __init__(self, app: Celery, timeout: int) -> None:
+        self.app = app
+        self.timeout = timeout
+
+    def publish(self, regression_spec_id: UUID, request_id: str | None) -> None:
+        try:
+            self.app.send_task(
+                REGRESSION_TASK_NAME,
+                kwargs={"regression_spec_id": str(regression_spec_id)},
+                headers={"request_id": request_id} if request_id else {},
+                task_id=str(regression_spec_id),
+                timeout=self.timeout,
+                confirm_timeout=self.timeout,
+            )
+        except Exception as exc:
+            raise RegressionQueuePublishError(regression_spec_id=regression_spec_id) from exc

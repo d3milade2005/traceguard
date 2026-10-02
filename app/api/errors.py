@@ -9,11 +9,14 @@ from starlette.responses import JSONResponse
 
 from app.core.exceptions import (
     ApplicationError,
+    AttributionNotCompletedError,
     AttributionNotFoundError,
     AttributionQueuePublishError,
     DependencyUnavailableError,
     InvalidTraceError,
     QueuePublishError,
+    RegressionNotFoundError,
+    RegressionQueuePublishError,
     RunNotFoundError,
     RunNotNormalizedError,
     TraceAdapterError,
@@ -31,6 +34,7 @@ def error_response(
     message: str,
     run_id: UUID | None = None,
     attribution_id: UUID | None = None,
+    regression_spec_id: UUID | None = None,
 ) -> JSONResponse:
     body = ErrorResponse(
         error=ErrorDetail(
@@ -39,6 +43,7 @@ def error_response(
             request_id=request_id,
             run_id=run_id,
             attribution_id=attribution_id,
+            regression_spec_id=regression_spec_id,
         )
     )
     return JSONResponse(
@@ -59,6 +64,9 @@ async def application_error_handler(request: Request, exc: ApplicationError) -> 
         AttributionNotFoundError: 404,
         AttributionQueuePublishError: 503,
         RunNotNormalizedError: 409,
+        AttributionNotCompletedError: 409,
+        RegressionNotFoundError: 404,
+        RegressionQueuePublishError: 503,
     }.get(type(exc), 500)
     return error_response(
         request.state.request_id,
@@ -67,6 +75,7 @@ async def application_error_handler(request: Request, exc: ApplicationError) -> 
         exc.public_message,
         exc.run_id if isinstance(exc, QueuePublishError) else None,
         exc.attribution_id if isinstance(exc, AttributionQueuePublishError) else None,
+        exc.regression_spec_id if isinstance(exc, RegressionQueuePublishError) else None,
     )
 
 

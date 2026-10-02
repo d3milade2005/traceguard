@@ -538,8 +538,31 @@ Algorithm-Generated fixture record, stripped of evaluation fields. It verifies
 structured output, semantic references, persistence, and usage. It does not score
 accuracy or retry the request. Missing key or opt-in skips the test.
 
+## Regression specification (Phase 5)
+
+Explicitly request `POST /api/v1/attributions/{attribution_id}/regression-specs`, then
+read the Location URL with `GET /api/v1/regression-specs/{regression_spec_id}`.
+Only completed attributions are accepted. New published operations return 202;
+repeated requests return the existing operation with 200 and do not generate again.
+Attribution abstention and unreconstructable inputs complete as `needs_review`
+without calling OpenAI. A failed publication returns 503 with the preserved operation ID.
+
+Phase 5 persists a bounded data-only `regression-spec-v1` IR and canonical scenario
+snapshot. Six assertion kinds cover scalar equality/inequality, string containment,
+and path presence/absence. Quotes and canonical references are validated, and at least
+one assertion must catch the observed failure. PostgreSQL claims fence duplicates and
+stale workers. Provider settings, retry classification, usage capture, and structured
+logging follow attribution. Generation remains explicitly triggered; it never starts
+automatically after attribution.
+
+Run `uv run alembic upgrade head` before starting the updated API/worker. Migration
+`0004` adds only regression specifications; historical migrations remain unchanged.
+See [the Phase 5 contract and operation guide](docs/regression-spec-v1.md) for the exact
+Phase 6 input, DSL semantics, review behavior, configuration, recovery, limits, and
+optional one-request live test.
+
 ## Next phase
 
-Phase 5 can derive a structured RegressionSpec from a validated attribution.
-RegressionSpec, PyTest compilation, isolated validation, benchmark scoring, model
+Phase 6 can deterministically compile a completed synthesizable specification and its
+scenario snapshot. PyTest compilation, isolated validation, benchmark scoring, model
 comparison, authentication, and frontend work remain deferred.
