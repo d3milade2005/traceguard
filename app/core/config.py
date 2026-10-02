@@ -43,6 +43,7 @@ class Settings(BaseSettings):
     openai_max_output_tokens: int = Field(default=4096, ge=256, le=32768)
     regression_max_input_bytes: int = Field(default=48000, ge=1024, le=1000000)
     regression_max_scenario_bytes: int = Field(default=16000, ge=256, le=1000000)
+    generated_test_max_source_bytes: int = Field(default=262144, ge=1024, le=4194304)
 
     @field_validator("openai_api_key", mode="before")
     @classmethod

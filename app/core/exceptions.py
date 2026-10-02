@@ -151,3 +151,62 @@ class RegressionQueuePublishError(QueuePublishError):
     def __init__(self, *, regression_spec_id: UUID) -> None:
         super().__init__()
         self.regression_spec_id = regression_spec_id
+
+
+class CompilationError(ApplicationError):
+    code = "COMPILATION_FAILED"
+    public_message = "The regression specification could not be compiled."
+
+    def __init__(self, *, generated_test_id: UUID | None = None) -> None:
+        super().__init__(self.public_message)
+        self.generated_test_id = generated_test_id
+
+
+class RegressionNotSynthesizableError(CompilationError):
+    code = "REGRESSION_NOT_SYNTHESIZABLE"
+    public_message = "Compilation requires a completed synthesizable regression specification."
+
+
+class UnsupportedSpecVersionError(CompilationError):
+    code = "REGRESSION_VERSION_UNSUPPORTED"
+    public_message = "The regression specification version is not supported by this compiler."
+
+
+class CompilationInputError(CompilationError):
+    code = "COMPILATION_INPUT_INVALID"
+    public_message = "The regression specification or scenario snapshot is invalid."
+
+
+class UnsupportedAssertionError(CompilationInputError):
+    code = "COMPILATION_ASSERTION_UNSUPPORTED"
+    public_message = "The regression assertion kind is not supported by this compiler."
+
+
+class InvalidScenarioSnapshotError(CompilationInputError):
+    code = "COMPILATION_SCENARIO_INVALID"
+    public_message = "The regression scenario snapshot is invalid or does not match canonical data."
+
+
+class CompilationInvariantError(CompilationError):
+    code = "COMPILER_INVARIANT_INVALID"
+    public_message = "The compiler could not produce the required artifact structure."
+
+
+class GeneratedSyntaxError(CompilationError):
+    code = "GENERATED_SYNTAX_INVALID"
+    public_message = "The compiler output did not pass static syntax validation."
+
+
+class GeneratedSafetyError(CompilationError):
+    code = "GENERATED_SOURCE_UNSAFE"
+    public_message = "The compiler output did not pass static safety validation."
+
+
+class GeneratedTestNotFoundError(ApplicationError):
+    code = "GENERATED_TEST_NOT_FOUND"
+    public_message = "The requested generated test does not exist."
+
+
+class CompilationPersistenceError(ApplicationError):
+    code = "COMPILATION_PERSISTENCE_UNAVAILABLE"
+    public_message = "The generated test could not be safely persisted."

@@ -4,6 +4,7 @@ from fastapi import Request
 
 from app.integrations.task_queue import CeleryAttributionPublisher, CeleryRegressionPublisher
 from app.services.attributions import AttributionStore
+from app.services.generated_tests import GeneratedTestService
 from app.services.readiness import ReadinessService
 from app.services.regression_specs import RegressionStore
 from app.services.runs import RunService
@@ -36,3 +37,7 @@ def get_regression_store(request: Request) -> RegressionStore:
 
 def get_regression_publisher(request: Request) -> CeleryRegressionPublisher:
     return cast(CeleryRegressionPublisher, request.app.state.regression_publisher)
+
+
+def get_generated_test_service(request: Request) -> GeneratedTestService:
+    return cast(GeneratedTestService, request.app.state.generated_tests)

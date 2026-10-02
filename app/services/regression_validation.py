@@ -4,6 +4,8 @@ from dataclasses import dataclass
 from pydantic import JsonValue
 
 from app.core.exceptions import RegressionValidationError
+from app.regression_runtime import assertion_holds as runtime_assertion_holds
+from app.regression_runtime import resolve
 from app.schemas.attributions import AttributionRecord
 from app.schemas.regression_specs import (
     Assertion,
@@ -22,39 +24,11 @@ class RegressionEvidence:
     sequences: frozenset[int]
 
 
-def resolve(value: JsonValue, path: tuple[str | int, ...]) -> tuple[bool, JsonValue]:
-    """Literal JSON traversal only; missing differs from a present null."""
-    for part in path:
-        if isinstance(part, str) and isinstance(value, dict) and part in value:
-            value = value.get(part)
-        elif (
-            isinstance(part, int)
-            and not isinstance(part, bool)
-            and isinstance(value, list)
-            and 0 <= part < len(value)
-        ):
-            value = value[part]
-        else:
-            return False, None
-    return True, value
-
-
 def assertion_holds(assertion: Assertion, value: JsonValue) -> bool:
-    present, actual = resolve(value, assertion.path)
-    if assertion.kind == "exists":
-        return present
-    if assertion.kind == "not_exists":
-        return not present
-    if not present:
-        return False
-    if assertion.kind in {"contains", "not_contains"}:
-        if not isinstance(actual, str) or not isinstance(assertion.expected, str):
-            raise RegressionValidationError
-        contains = assertion.expected in actual
-        return contains if assertion.kind == "contains" else not contains
-    # JSON scalar equality distinguishes boolean from numeric values.
-    equal = type(actual) is type(assertion.expected) and actual == assertion.expected
-    return equal if assertion.kind == "equals" else not equal
+    try:
+        return runtime_assertion_holds(assertion.kind, value, assertion.path, assertion.expected)
+    except ValueError as exc:
+        raise RegressionValidationError from exc
 
 
 def source_value(ref: SourceReference, evidence: RegressionEvidence) -> JsonValue:

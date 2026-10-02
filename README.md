@@ -561,8 +561,25 @@ See [the Phase 5 contract and operation guide](docs/regression-spec-v1.md) for t
 Phase 6 input, DSL semantics, review behavior, configuration, recovery, limits, and
 optional one-request live test.
 
+## Deterministic PyTest compilation (Phase 6)
+
+Request `POST /api/v1/regression-specs/{regression_spec_id}/generated-tests` to compile a
+completed synthesizable specification and its server-resolved snapshot synchronously.
+A new artifact returns 201; repeated requests return the existing artifact with 200.
+Read source, digest, compiler/harness versions, lifecycle, and safe failure information
+with `GET /api/v1/generated-tests/{generated_test_id}`.
+
+The pure compiler renders literal JSON and six fixed assertion helpers against an
+approved developer-owned harness protocol. It parses and statically checks source,
+then persists the artifact atomically. It never calls an LLM or runs/imports generated
+code. Who&When review outcomes remain valid and cannot be compiled. Migration `0005`
+adds the artifact table; run `uv run alembic upgrade head` before starting the updated API.
+See [the compiler and Phase 7 contract](docs/pytest-compiler-v1.md) for exact semantics,
+source validation, API errors, limits, idempotency, and the required isolated harness.
+
 ## Next phase
 
-Phase 6 can deterministically compile a completed synthesizable specification and its
-scenario snapshot. PyTest compilation, isolated validation, benchmark scoring, model
-comparison, authentication, and frontend work remain deferred.
+Phase 7 can execute completed GeneratedTest artifacts with an approved harness in an
+isolated bounded environment and compare faulty/corrected behavior. Isolated execution,
+validation-result persistence, benchmark scoring, model comparison, authentication,
+and frontend work remain deferred.

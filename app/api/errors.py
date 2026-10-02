@@ -12,14 +12,25 @@ from app.core.exceptions import (
     AttributionNotCompletedError,
     AttributionNotFoundError,
     AttributionQueuePublishError,
+    CompilationError,
+    CompilationInputError,
+    CompilationInvariantError,
+    CompilationPersistenceError,
     DependencyUnavailableError,
+    GeneratedSafetyError,
+    GeneratedSyntaxError,
+    GeneratedTestNotFoundError,
+    InvalidScenarioSnapshotError,
     InvalidTraceError,
     QueuePublishError,
     RegressionNotFoundError,
+    RegressionNotSynthesizableError,
     RegressionQueuePublishError,
     RunNotFoundError,
     RunNotNormalizedError,
     TraceAdapterError,
+    UnsupportedAssertionError,
+    UnsupportedSpecVersionError,
     UnsupportedTraceSourceError,
 )
 from app.schemas.http import ErrorDetail, ErrorResponse
@@ -35,6 +46,7 @@ def error_response(
     run_id: UUID | None = None,
     attribution_id: UUID | None = None,
     regression_spec_id: UUID | None = None,
+    generated_test_id: UUID | None = None,
 ) -> JSONResponse:
     body = ErrorResponse(
         error=ErrorDetail(
@@ -44,6 +56,7 @@ def error_response(
             run_id=run_id,
             attribution_id=attribution_id,
             regression_spec_id=regression_spec_id,
+            generated_test_id=generated_test_id,
         )
     )
     return JSONResponse(
@@ -67,6 +80,16 @@ async def application_error_handler(request: Request, exc: ApplicationError) -> 
         AttributionNotCompletedError: 409,
         RegressionNotFoundError: 404,
         RegressionQueuePublishError: 503,
+        RegressionNotSynthesizableError: 409,
+        UnsupportedSpecVersionError: 422,
+        CompilationInputError: 422,
+        UnsupportedAssertionError: 422,
+        InvalidScenarioSnapshotError: 422,
+        CompilationInvariantError: 500,
+        GeneratedSafetyError: 500,
+        GeneratedSyntaxError: 500,
+        GeneratedTestNotFoundError: 404,
+        CompilationPersistenceError: 503,
     }.get(type(exc), 500)
     return error_response(
         request.state.request_id,
@@ -76,6 +99,7 @@ async def application_error_handler(request: Request, exc: ApplicationError) -> 
         exc.run_id if isinstance(exc, QueuePublishError) else None,
         exc.attribution_id if isinstance(exc, AttributionQueuePublishError) else None,
         exc.regression_spec_id if isinstance(exc, RegressionQueuePublishError) else None,
+        exc.generated_test_id if isinstance(exc, CompilationError) else None,
     )
 
 
