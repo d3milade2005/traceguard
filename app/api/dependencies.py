@@ -2,13 +2,18 @@ from typing import cast
 
 from fastapi import Request
 
-from app.integrations.task_queue import CeleryAttributionPublisher, CeleryRegressionPublisher
+from app.integrations.task_queue import (
+    CeleryAttributionPublisher,
+    CeleryRegressionPublisher,
+    CeleryValidationPublisher,
+)
 from app.services.attributions import AttributionStore
 from app.services.generated_tests import GeneratedTestService
 from app.services.readiness import ReadinessService
 from app.services.regression_specs import RegressionStore
 from app.services.runs import RunService
 from app.services.submission import SubmissionService
+from app.services.validations import ValidationService
 
 
 def get_readiness_service(request: Request) -> ReadinessService:
@@ -41,3 +46,11 @@ def get_regression_publisher(request: Request) -> CeleryRegressionPublisher:
 
 def get_generated_test_service(request: Request) -> GeneratedTestService:
     return cast(GeneratedTestService, request.app.state.generated_tests)
+
+
+def get_validation_service(request: Request) -> ValidationService:
+    return cast(ValidationService, request.app.state.validations)
+
+
+def get_validation_publisher(request: Request) -> CeleryValidationPublisher:
+    return cast(CeleryValidationPublisher, request.app.state.validation_publisher)

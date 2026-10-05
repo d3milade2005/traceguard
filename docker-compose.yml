@@ -65,7 +65,7 @@ services:
 
   worker:
     <<: *app
-    command: ["celery", "-A", "app.workers.celery_app:celery_app", "worker", "--loglevel=INFO", "--hostname=worker@%h"]
+    command: ["celery", "-A", "app.workers.celery_app:celery_app", "worker", "-Q", "traceguard", "--loglevel=INFO", "--hostname=worker@%h"]
     depends_on:
       postgres:
         condition: service_healthy
@@ -77,6 +77,37 @@ services:
       timeout: 10s
       retries: 3
       start_period: 20s
+
+  validation-worker:
+    profiles: ["validation"]
+    build:
+      context: .
+      target: validation-worker
+    command: ["celery", "-A", "app.workers.validation_celery_app:celery_app", "worker", "-Q", "traceguard.validation", "--concurrency=1", "--loglevel=INFO"]
+    environment:
+      DATABASE_URL: postgresql+psycopg://${POSTGRES_USER:-traceguard}:${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in .env}@postgres:5432/${POSTGRES_DB:-traceguard}
+      RABBITMQ_URL: amqp://${RABBITMQ_DEFAULT_USER:-traceguard}:${RABBITMQ_DEFAULT_PASS:?Set RABBITMQ_DEFAULT_PASS in .env}@rabbitmq:5672/${RABBITMQ_DEFAULT_VHOST:-traceguard}
+      VALIDATION_IMAGE: ${VALIDATION_IMAGE:-traceguard-validation:1}
+      VALIDATION_TIMEOUT_SECONDS: ${VALIDATION_TIMEOUT_SECONDS:-10}
+      VALIDATION_COMMAND_TIMEOUT_SECONDS: ${VALIDATION_COMMAND_TIMEOUT_SECONDS:-10}
+      VALIDATION_MEMORY_MB: ${VALIDATION_MEMORY_MB:-256}
+      VALIDATION_CPUS: ${VALIDATION_CPUS:-1.0}
+      VALIDATION_PIDS: ${VALIDATION_PIDS:-32}
+      VALIDATION_TMP_MB: ${VALIDATION_TMP_MB:-16}
+      VALIDATION_OUTPUT_BYTES: ${VALIDATION_OUTPUT_BYTES:-32768}
+      VALIDATION_RESULT_BYTES: ${VALIDATION_RESULT_BYTES:-32768}
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+    group_add: ["${DOCKER_GID:-0}"]
+    init: true
+    security_opt: ["no-new-privileges:true"]
+    cap_drop: ["ALL"]
+    stop_grace_period: 180s
+    depends_on:
+      postgres:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
 
 volumes:
   postgres_data:

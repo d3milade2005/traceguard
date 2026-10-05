@@ -32,6 +32,10 @@ from app.core.exceptions import (
     UnsupportedAssertionError,
     UnsupportedSpecVersionError,
     UnsupportedTraceSourceError,
+    ValidationArtifactError,
+    ValidationNotFoundError,
+    ValidationPersistenceError,
+    ValidationQueuePublishError,
 )
 from app.schemas.http import ErrorDetail, ErrorResponse
 
@@ -47,6 +51,7 @@ def error_response(
     attribution_id: UUID | None = None,
     regression_spec_id: UUID | None = None,
     generated_test_id: UUID | None = None,
+    validation_id: UUID | None = None,
 ) -> JSONResponse:
     body = ErrorResponse(
         error=ErrorDetail(
@@ -57,6 +62,7 @@ def error_response(
             attribution_id=attribution_id,
             regression_spec_id=regression_spec_id,
             generated_test_id=generated_test_id,
+            validation_id=validation_id,
         )
     )
     return JSONResponse(
@@ -90,6 +96,10 @@ async def application_error_handler(request: Request, exc: ApplicationError) -> 
         GeneratedSyntaxError: 500,
         GeneratedTestNotFoundError: 404,
         CompilationPersistenceError: 503,
+        ValidationArtifactError: 422,
+        ValidationNotFoundError: 404,
+        ValidationPersistenceError: 503,
+        ValidationQueuePublishError: 503,
     }.get(type(exc), 500)
     return error_response(
         request.state.request_id,
@@ -100,6 +110,7 @@ async def application_error_handler(request: Request, exc: ApplicationError) -> 
         exc.attribution_id if isinstance(exc, AttributionQueuePublishError) else None,
         exc.regression_spec_id if isinstance(exc, RegressionQueuePublishError) else None,
         exc.generated_test_id if isinstance(exc, CompilationError) else None,
+        exc.validation_id if isinstance(exc, ValidationQueuePublishError) else None,
     )
 
 

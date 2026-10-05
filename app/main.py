@@ -20,6 +20,7 @@ from app.integrations.task_queue import (
     CeleryAttributionPublisher,
     CeleryRegressionPublisher,
     CeleryRunPublisher,
+    CeleryValidationPublisher,
 )
 from app.integrations.traces.sources import trace_adapters
 from app.services.attributions import AttributionStore
@@ -29,6 +30,7 @@ from app.services.readiness import ReadinessService
 from app.services.regression_specs import RegressionStore
 from app.services.runs import RunService
 from app.services.submission import SubmissionService
+from app.services.validations import ValidationService
 from app.workers.factory import create_celery_app
 
 
@@ -46,6 +48,10 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         queue = create_celery_app(settings)
         app.state.runs = RunService(app.state.sessions, settings.max_request_body_bytes)
         app.state.attributions = AttributionStore(app.state.sessions)
+        app.state.validations = ValidationService(app.state.sessions, settings)
+        app.state.validation_publisher = CeleryValidationPublisher(
+            queue, settings.dependency_timeout_seconds
+        )
         app.state.generated_tests = GeneratedTestService(
             app.state.sessions,
             PytestCompiler(

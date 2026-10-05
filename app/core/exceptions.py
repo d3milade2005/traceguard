@@ -210,3 +210,40 @@ class GeneratedTestNotFoundError(ApplicationError):
 class CompilationPersistenceError(ApplicationError):
     code = "COMPILATION_PERSISTENCE_UNAVAILABLE"
     public_message = "The generated test could not be safely persisted."
+
+
+class ValidationArtifactError(ApplicationError):
+    code = "VALIDATION_ARTIFACT_INVALID"
+    public_message = "The artifact, harness, or linked scenario is not eligible for validation."
+
+
+class ValidationNotFoundError(ApplicationError):
+    code = "VALIDATION_NOT_FOUND"
+    public_message = "The requested regression validation does not exist."
+
+
+class ValidationQueuePublishError(QueuePublishError):
+    public_message = "The validation was preserved but could not be queued."
+
+    def __init__(self, *, validation_id: UUID) -> None:
+        super().__init__()
+        self.validation_id = validation_id
+
+
+class SandboxUnavailableError(ApplicationError):
+    code = "SANDBOX_UNAVAILABLE"
+    public_message = "The isolated execution runtime is temporarily unavailable."
+
+
+class SandboxPolicyError(ApplicationError):
+    code = "SANDBOX_POLICY_INVALID"
+    public_message = "The isolated execution runtime does not meet the approved policy."
+
+
+class SandboxCleanupError(SandboxUnavailableError):
+    code = "SANDBOX_CLEANUP_FAILED"
+
+
+class ValidationPersistenceError(ApplicationError):
+    code = "VALIDATION_PERSISTENCE_UNAVAILABLE"
+    public_message = "Validation state could not be safely persisted."

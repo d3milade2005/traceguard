@@ -579,7 +579,18 @@ source validation, API errors, limits, idempotency, and the required isolated ha
 
 ## Next phase
 
-Phase 7 can execute completed GeneratedTest artifacts with an approved harness in an
-isolated bounded environment and compare faulty/corrected behavior. Isolated execution,
-validation-result persistence, benchmark scoring, model comparison, authentication,
-and frontend work remain deferred.
+Phase 7 validates completed GeneratedTest artifacts asynchronously using
+`POST /api/v1/generated-tests/{generated_test_id}/validations` and
+`GET /api/v1/validations/{validation_id}`. The dedicated validation worker executes the
+same artifact in fresh hardened Docker containers against the approved faulty and
+corrected calculator pair. A regression is valid only when its expected assertion fails
+against faulty behavior and the corrected behavior passes. No LLM call or host execution
+is involved. Apply migration `0006` and build the pinned validation image first.
+
+See [Phase 7 setup, contracts, trust boundary, and limitations](docs/isolated-validation-v1.md).
+The optional `validation` Compose profile alone grants Docker socket access to its
+dedicated worker; this is host-level administrative authority. API and ordinary workers
+have no socket. Deploy the runner on a dedicated host/VM for untrusted submissions.
+
+Phase 8 benchmark scoring/evaluation, model comparison, authentication, and frontend
+work remain deferred.

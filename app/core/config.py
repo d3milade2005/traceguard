@@ -34,6 +34,7 @@ class Settings(BaseSettings):
     dependency_timeout_seconds: int = Field(default=3, ge=1, le=30)
     worker_concurrency: int = Field(default=2, ge=1, le=64)
 
+
     normalization_timeout_seconds: int = Field(default=60, ge=10, le=600)
     analysis_context: ContextPolicy = Field(default_factory=ContextPolicy)
     openai_api_key: SecretStr | None = None
@@ -44,6 +45,32 @@ class Settings(BaseSettings):
     regression_max_input_bytes: int = Field(default=48000, ge=1024, le=1000000)
     regression_max_scenario_bytes: int = Field(default=16000, ge=256, le=1000000)
     generated_test_max_source_bytes: int = Field(default=262144, ge=1024, le=4194304)
+    validation_image: str = "traceguard-validation:1"
+    validation_timeout_seconds: int = Field(default=10, ge=1, le=60)
+    validation_command_timeout_seconds: int = Field(default=10, ge=2, le=30)
+    validation_memory_mb: int = Field(default=256, ge=64, le=1024)
+    validation_cpus: float = Field(default=1.0, ge=0.1, le=2.0)
+    validation_pids: int = Field(default=32, ge=16, le=128)
+    validation_tmp_mb: int = Field(default=16, ge=4, le=64)
+    validation_output_bytes: int = Field(default=32768, ge=1024, le=131072)
+    validation_result_bytes: int = Field(default=32768, ge=1024, le=131072)
+
+
+
+    @field_validator("validation_image")
+    @classmethod
+    def pinned_validation_image(cls, value: str) -> str:
+        import re
+
+        if not re.fullmatch(r"[A-Za-z0-9][A-Za-z0-9./_:@-]{0,299}", value):
+            raise ValueError("Validation image reference is invalid")
+        if "@sha256:" not in value and not value.startswith("sha256:"):
+            tag = value.rsplit("/", 1)[-1]
+            if ":" not in tag or tag.rsplit(":", 1)[-1] == "latest":
+                raise ValueError(
+                    "Validation image requires an explicit non-latest version or digest"
+                )
+        return value
 
     @field_validator("openai_api_key", mode="before")
     @classmethod

@@ -1,11 +1,13 @@
 from uuid import UUID
 
 from celery import Celery
+from kombu import Queue
 
 from app.core.exceptions import (
     AttributionQueuePublishError,
     QueuePublishError,
     RegressionQueuePublishError,
+    ValidationQueuePublishError,
 )
 from app.workers.attribution_tasks import ATTRIBUTION_TASK_NAME
 from app.workers.regression_tasks import REGRESSION_TASK_NAME
@@ -69,3 +71,23 @@ class CeleryRegressionPublisher:
             )
         except Exception as exc:
             raise RegressionQueuePublishError(regression_spec_id=regression_spec_id) from exc
+
+
+class CeleryValidationPublisher:
+    def __init__(self, app: Celery, timeout: int) -> None:
+        self.app = app
+        self.timeout = timeout
+
+    def publish(self, validation_id: UUID, request_id: str | None) -> None:
+        try:
+            self.app.send_task(
+                "traceguard.validate_regression",
+                queue=Queue("traceguard.validation"),
+                kwargs={"validation_id": str(validation_id)},
+                headers={"request_id": request_id} if request_id else {},
+                task_id=str(validation_id),
+                timeout=self.timeout,
+                confirm_timeout=self.timeout,
+            )
+        except Exception as exc:
+            raise ValidationQueuePublishError(validation_id=validation_id) from exc

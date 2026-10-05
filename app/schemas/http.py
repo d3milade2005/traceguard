@@ -12,6 +12,7 @@ class ErrorDetail(BaseModel):
     attribution_id: UUID | None = None
     regression_spec_id: UUID | None = None
     generated_test_id: UUID | None = None
+    validation_id: UUID | None = None
 
 
 class ErrorResponse(BaseModel):
