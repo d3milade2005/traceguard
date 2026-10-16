@@ -12,6 +12,11 @@ class ApplicationError(Exception):
     public_message = "The operation could not be completed."
 
 
+class AnalysisNotFoundError(ApplicationError):
+    code = "ANALYSIS_NOT_FOUND"
+    public_message = "The requested run analysis does not exist."
+
+
 class DependencyUnavailableError(ApplicationError):
     code = "DEPENDENCY_UNAVAILABLE"
     public_message = "A required service is unavailable."

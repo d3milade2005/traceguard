@@ -8,6 +8,7 @@ from starlette.exceptions import HTTPException
 from starlette.responses import JSONResponse
 
 from app.core.exceptions import (
+    AnalysisNotFoundError,
     ApplicationError,
     AttributionNotCompletedError,
     AttributionNotFoundError,
@@ -74,6 +75,7 @@ def error_response(
 
 async def application_error_handler(request: Request, exc: ApplicationError) -> JSONResponse:
     status = {
+        AnalysisNotFoundError: 404,
         DependencyUnavailableError: 503,
         RunNotFoundError: 404,
         InvalidTraceError: 413,

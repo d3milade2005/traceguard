@@ -23,7 +23,7 @@ from app.core.exceptions import (
     RunNotNormalizedError,
 )
 from app.core.logging import bind_log_context
-from app.db.models import RegressionSpecOperation
+from app.db.models import Analysis, Attribution, RegressionSpecOperation
 from app.integrations.llm.regression import RegressionGenerator
 from app.schemas.attributions import ProviderUsage, ReasoningEffort
 from app.schemas.regression_specs import RegressionRecord, RegressionResult
@@ -51,6 +51,7 @@ class RegressionClaim:
     request_id: str | None
     model: str
     reasoning_effort: ReasoningEffort
+    single_attempt: bool = False
 
 
 class RegressionService:
@@ -83,6 +84,7 @@ class RegressionService:
                 claim = self.claim(regression_spec_id)
                 if claim is None:
                     return
+                final_attempt = final_attempt or claim.single_attempt
                 # Keep identifiers bound through error handling as well as the happy path.
                 log_scope.enter_context(
                     bind_log_context(
@@ -172,7 +174,18 @@ class RegressionService:
             now = self._now(session)
             if row.claim_expires_at is not None and row.claim_expires_at > now:
                 raise RunClaimedError(math.ceil((row.claim_expires_at - now).total_seconds()))
-            if row.processing_attempts >= MAX_REGRESSION_ATTEMPTS:
+            analysis = session.scalar(
+                select(Analysis)
+                .join(Attribution, Attribution.run_id == Analysis.run_id)
+                .where(Attribution.id == row.attribution_id)
+            )
+            if analysis is not None and (
+                analysis.status != "active" or analysis.deadline_at <= now
+            ):
+                self._fail(row, "ANALYSIS_STOPPED", now)
+                return None
+            limit = 1 if analysis is not None else MAX_REGRESSION_ATTEMPTS
+            if row.processing_attempts >= limit:
                 self._fail(row, "REGRESSION_ATTEMPTS_EXHAUSTED", now)
                 return None
             if row.prompt_version != PROMPT_VERSION:
@@ -185,7 +198,13 @@ class RegressionService:
             # Reuse the validated public schema for configuration stored at submission time.
             effort = RegressionRecord.model_validate(row).reasoning_effort
             claim = RegressionClaim(
-                row.id, row.attribution_id, row.claim_token, row.request_id, row.model, effort
+                row.id,
+                row.attribution_id,
+                row.claim_token,
+                row.request_id,
+                row.model,
+                effort,
+                analysis is not None,
             )
         logger.info(
             "Regression claimed",

@@ -24,7 +24,7 @@ from app.core.exceptions import (
     RunNotNormalizedError,
 )
 from app.core.logging import bind_log_context
-from app.db.models import Attribution, AttributionEvidence
+from app.db.models import Analysis, Attribution, AttributionEvidence
 from app.integrations.llm.contracts import LLMClient
 from app.schemas.attributions import AttributionRecord, LLMResult, ProviderUsage, ReasoningEffort
 from app.schemas.context import AnalysisContext, TruncatedTraceStep
@@ -52,6 +52,7 @@ class AttributionClaim:
     request_id: str | None
     model: str
     reasoning_effort: ReasoningEffort
+    single_attempt: bool = False
 
 
 class AttributionService:
@@ -80,6 +81,7 @@ class AttributionService:
                 claim = self.claim(attribution_id)
                 if claim is None:
                     return
+                final_attempt = final_attempt or claim.single_attempt
                 # Keep identifiers bound through error handling as well as the happy path.
                 log_scope.enter_context(
                     bind_log_context(
@@ -161,7 +163,14 @@ class AttributionService:
             now = self._now(session)
             if row.claim_expires_at is not None and row.claim_expires_at > now:
                 raise RunClaimedError(math.ceil((row.claim_expires_at - now).total_seconds()))
-            if row.processing_attempts >= MAX_ATTRIBUTION_ATTEMPTS:
+            analysis = session.scalar(select(Analysis).where(Analysis.run_id == row.run_id))
+            if analysis is not None and (
+                analysis.status != "active" or analysis.deadline_at <= now
+            ):
+                self._fail(row, "ANALYSIS_STOPPED", now)
+                return None
+            limit = 1 if analysis is not None else MAX_ATTRIBUTION_ATTEMPTS
+            if row.processing_attempts >= limit:
                 self._fail(row, "ATTRIBUTION_ATTEMPTS_EXHAUSTED", now)
                 return None
             if row.prompt_version != PROMPT_VERSION:
@@ -174,7 +183,13 @@ class AttributionService:
             # Reuse the validated public schema for configuration stored at submission time.
             effort = AttributionRecord.model_validate(row).reasoning_effort
             claim = AttributionClaim(
-                row.id, row.run_id, row.claim_token, row.request_id, row.model, effort
+                row.id,
+                row.run_id,
+                row.claim_token,
+                row.request_id,
+                row.model,
+                effort,
+                analysis is not None,
             )
         logger.info(
             "Attribution claimed",

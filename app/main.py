@@ -23,6 +23,7 @@ from app.integrations.task_queue import (
     CeleryValidationPublisher,
 )
 from app.integrations.traces.sources import trace_adapters
+from app.services.analysis_factory import create_analysis_service
 from app.services.attributions import AttributionStore
 from app.services.generated_tests import GeneratedTestService
 from app.services.pytest_compiler import PytestCompiler
@@ -46,6 +47,8 @@ def create_app(settings: Settings | None = None) -> FastAPI:
             engine, settings.rabbitmq_url.get_secret_value(), settings.dependency_timeout_seconds
         )
         queue = create_celery_app(settings)
+        app.state.queue = queue
+        app.state.analyses = create_analysis_service(app.state.sessions, settings, queue)
         app.state.runs = RunService(app.state.sessions, settings.max_request_body_bytes)
         app.state.attributions = AttributionStore(app.state.sessions)
         app.state.validations = ValidationService(app.state.sessions, settings)

@@ -7,6 +7,7 @@ from app.integrations.task_queue import (
     CeleryRegressionPublisher,
     CeleryValidationPublisher,
 )
+from app.services.analyses import AnalysisService
 from app.services.attributions import AttributionStore
 from app.services.generated_tests import GeneratedTestService
 from app.services.readiness import ReadinessService
@@ -18,6 +19,10 @@ from app.services.validations import ValidationService
 
 def get_readiness_service(request: Request) -> ReadinessService:
     return cast(ReadinessService, request.app.state.readiness)
+
+
+def get_analysis_service(request: Request) -> AnalysisService:
+    return cast(AnalysisService, request.app.state.analyses)
 
 
 def get_run_service(request: Request) -> RunService:

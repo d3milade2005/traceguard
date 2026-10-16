@@ -57,8 +57,17 @@ def validate_regression(
             if citation.field == "task"
             else getattr(evidence.canonical.steps[citation.sequence], citation.field)
         )
-        text = value if isinstance(value, str) else json.dumps(value, ensure_ascii=False)
-        if not citation.quote.strip() or citation.quote not in text:
+        # Match the exact compact representation supplied to the provider, while
+        # retaining compatibility with persisted specifications using spaced JSON.
+        texts = (
+            (value,)
+            if isinstance(value, str)
+            else (
+                json.dumps(value, ensure_ascii=False),
+                json.dumps(value, ensure_ascii=False, sort_keys=True, separators=(",", ":")),
+            )
+        )
+        if not citation.quote.strip() or not any(citation.quote in text for text in texts):
             raise RegressionValidationError
     if spec.disposition == "needs_review":
         return None

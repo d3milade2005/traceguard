@@ -90,6 +90,70 @@ def test_synthesizable_ir_round_trip_and_server_resolved_input():
     assert ir.assertions[0].evidence[0].sequence == 0
 
 
+def test_citations_accept_exact_provider_json_without_weakening_literal_grounding():
+    from tests.fixtures.replayable import calculator_record, calculator_spec, calculator_trace
+
+    record = calculator_record()
+    attr = evidence().attribution.model_copy(
+        update={
+            "responsible_agent": "calculator",
+            "decisive_sequence": 1,
+            "context_manifest": {"visible_sequences": [0, 1], "truncated_sequences": []},
+            "evidence": (
+                PersistedEvidence(
+                    start_sequence=0,
+                    end_sequence=1,
+                    reason="Setup and failure",
+                    contains_truncated=False,
+                ),
+            ),
+        }
+    )
+    source = load_evidence(attr, calculator_trace())
+    ir = calculator_spec()
+    for quote in ('{"sum":5}', '{"sum": 5}'):
+        updated = ir.model_copy(
+            update={"evidence": (Citation(sequence=1, field="output", quote=quote),)}
+        )
+        assert (
+            validate_regression(updated, source, max_scenario_bytes=16000)
+            == record.scenario_snapshot
+        )
+    with pytest.raises(RegressionValidationError):
+        validate_regression(
+            ir.model_copy(
+                update={"evidence": (Citation(sequence=1, field="output", quote='{"sum":4}'),)}
+            ),
+            source,
+            max_scenario_bytes=16000,
+        )
+
+
+def test_visible_complete_setup_is_retained_without_rewriting_diagnosis():
+    from tests.fixtures.replayable import calculator_trace
+
+    attr = evidence().attribution.model_copy(
+        update={
+            "responsible_agent": "calculator",
+            "decisive_sequence": 1,
+            "context_manifest": {"visible_sequences": [0, 1], "truncated_sequences": []},
+            "evidence": (
+                PersistedEvidence(
+                    start_sequence=1, end_sequence=1, reason="Failure", contains_truncated=False
+                ),
+            ),
+        }
+    )
+    assert load_evidence(attr, calculator_trace()).sequences == {0, 1}
+    assert attr.evidence[0].start_sequence == 1
+    for manifest in (
+        {"visible_sequences": [1], "truncated_sequences": []},
+        {"visible_sequences": [0, 1], "truncated_sequences": [0]},
+    ):
+        changed = attr.model_copy(update={"context_manifest": manifest})
+        assert load_evidence(changed, calculator_trace()).sequences == {1}
+
+
 @pytest.mark.parametrize(
     "kind,expected,path",
     [

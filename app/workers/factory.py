@@ -59,4 +59,7 @@ def create_celery_app(settings: Settings, *, validation_worker: bool = False) ->
     from app.workers.regression_tasks import register_regression_task
 
     register_regression_task(app, settings)
+    from app.workers.analysis_tasks import register_analysis_task
+
+    register_analysis_task(app, settings)
     return app

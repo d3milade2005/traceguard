@@ -35,6 +35,24 @@ class CeleryRunPublisher:
             raise QueuePublishError(run_id=run_id) from exc
 
 
+class CeleryAnalysisPublisher:
+    def __init__(self, app: Celery, timeout: int) -> None:
+        self.app = app
+        self.timeout = timeout
+
+    def publish(self, run_id: UUID, request_id: str | None) -> None:
+        try:
+            self.app.send_task(
+                "traceguard.advance_analysis",
+                kwargs={"run_id": str(run_id)},
+                headers={"request_id": request_id} if request_id else {},
+                timeout=self.timeout,
+                confirm_timeout=self.timeout,
+            )
+        except Exception as exc:
+            raise QueuePublishError(run_id=run_id) from exc
+
+
 class CeleryAttributionPublisher:
     def __init__(self, app: Celery, timeout: int) -> None:
         self.app = app

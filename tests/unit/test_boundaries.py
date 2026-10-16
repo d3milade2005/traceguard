@@ -71,6 +71,7 @@ def test_celery_configuration_and_normalization_task(settings):
         "traceguard.process_run",
         "traceguard.attribute_run",
         "traceguard.generate_regression_spec",
+        "traceguard.advance_analysis",
     }
     assert celery.tasks["traceguard.process_run"].reject_on_worker_lost
     assert "traceguard" in celery.amqp.queues

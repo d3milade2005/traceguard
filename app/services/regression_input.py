@@ -55,6 +55,21 @@ def load_evidence(attribution: AttributionRecord, canonical: CanonicalTrace) -> 
     visible = manifest.get("visible_sequences", [])
     if not isinstance(visible, list) or not sequences <= {v for v in visible if type(v) is int}:
         raise RegressionInputError
+    # Diagnostic citations need not mention successful setup. Retain complete,
+    # previously visible setup events so synthesis can reconstruct preconditions.
+    truncated = manifest.get("truncated_sequences", [])
+    if not isinstance(truncated, list):
+        raise RegressionInputError
+    decisive = attribution.decisive_sequence
+    if decisive is not None:
+        sequences.update(
+            sequence
+            for sequence in visible
+            if type(sequence) is int
+            and 0 <= sequence < min(decisive, len(canonical.steps))
+            and sequence not in truncated
+            and canonical.steps[sequence].event_type == "setup"
+        )
     return RegressionEvidence(attribution, canonical, frozenset(sequences))
 
 

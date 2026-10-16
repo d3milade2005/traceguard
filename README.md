@@ -1,5 +1,8 @@
 # Traceguard
 
+The integrated backend analysis workflow and opt-in two-call live demonstration are
+documented in [Analysis pipeline](docs/analysis-pipeline.md). Phase 8 is not started.
+
 Backend foundation for post-mortem debugging of failed multi-agent executions.
 The planned pipeline preserves a failed trace, normalizes it, attributes the
 failure, constructs a RegressionSpec, compiles PyTest, and validates it in isolation.
