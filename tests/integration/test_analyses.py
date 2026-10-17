@@ -204,6 +204,20 @@ def test_compilation_failure_preserves_artifact_and_stops(pipeline, monkeypatch)
     assert result.generated_test_id is not None and result.validation_id is None
 
 
+def test_incompatible_recorded_setup_stops_for_review_without_validation(pipeline):
+    spec = calculator_spec()
+    setup = spec.scenario.preconditions[0].model_copy(update={"path": ("operation",)})
+    scenario = spec.scenario.model_copy(update={"preconditions": (setup,)})
+    pipeline[4].generate.return_value = RegressionResult(
+        spec=spec.model_copy(update={"scenario": scenario})
+    )
+    result = drive(pipeline)
+    assert result.status == "review_required"
+    assert result.stop_reason == "REPLAY_CONTRACT_INCOMPATIBLE"
+    assert result.generated_test_id is not None and result.validation_id is None
+    assert not pipeline[5].calls
+
+
 def test_single_attempt_even_after_transient_failure_or_duplicate(pipeline):
     run, service, worker, _, fake, *_ = pipeline
     fake.attribute.side_effect = LLMTransientError

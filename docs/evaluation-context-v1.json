@@ -1,0 +1,87 @@
+{
+  "anomalies": {
+    "agent_casing_variant": 2,
+    "agent_step_speaker_disagreement": 8,
+    "nullable_fields": 54,
+    "overlapping_question_id": 90,
+    "step_out_of_range": 3
+  },
+  "by_subset": {
+    "Algorithm-Generated": {
+      "decisive_complete": 126,
+      "decisive_context_unavailable": 0,
+      "decisive_omitted": 0,
+      "decisive_sequence_visible_rate": 1.0,
+      "decisive_step_retention_rate": 1.0,
+      "decisive_truncated": 0,
+      "failed": 0,
+      "full": 124,
+      "full_fraction": 0.9841269841269841,
+      "mean_original_size": 14395.20634920635,
+      "mean_selected_size": 13447.753968253968,
+      "processed": 126,
+      "pruned": 2,
+      "pruned_fraction": 0.015873015873015872,
+      "selected_over_original_ratio": 0.9341827857157035,
+      "size_unit": "utf8_bytes",
+      "step_eligible": 126,
+      "total": 126
+    },
+    "Hand-Crafted": {
+      "decisive_complete": 36,
+      "decisive_context_unavailable": 0,
+      "decisive_omitted": 19,
+      "decisive_sequence_visible_rate": 0.6545454545454545,
+      "decisive_step_retention_rate": 0.6545454545454545,
+      "decisive_truncated": 0,
+      "failed": 0,
+      "full": 32,
+      "full_fraction": 0.5517241379310345,
+      "mean_original_size": 80573.79310344828,
+      "mean_selected_size": 45291.620689655174,
+      "processed": 58,
+      "pruned": 26,
+      "pruned_fraction": 0.4482758620689655,
+      "selected_over_original_ratio": 0.5621135476581759,
+      "size_unit": "utf8_bytes",
+      "step_eligible": 55,
+      "total": 58
+    }
+  },
+  "development_sample_count": 16,
+  "eligibility": {
+    "agent_eligible": 182,
+    "agent_excluded": 2,
+    "annotation_anomalous_samples": 104,
+    "joint_eligible": 179,
+    "joint_excluded": 5,
+    "step_eligible": 181,
+    "step_excluded": 3,
+    "total": 184
+  },
+  "metrics": {
+    "decisive_complete": 162,
+    "decisive_context_unavailable": 0,
+    "decisive_omitted": 19,
+    "decisive_sequence_visible_rate": 0.8950276243093923,
+    "decisive_step_retention_rate": 0.8950276243093923,
+    "decisive_truncated": 0,
+    "failed": 0,
+    "full": 156,
+    "full_fraction": 0.8478260869565217,
+    "mean_original_size": 35255.84782608696,
+    "mean_selected_size": 23485.494565217392,
+    "processed": 184,
+    "pruned": 28,
+    "pruned_fraction": 0.15217391304347827,
+    "selected_over_original_ratio": 0.6661446543866605,
+    "size_unit": "utf8_bytes",
+    "step_eligible": 181,
+    "total": 184
+  },
+  "partition_counts": {
+    "development": 35,
+    "final": 149
+  },
+  "track": "context-audit"
+}

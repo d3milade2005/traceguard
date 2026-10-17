@@ -57,7 +57,7 @@ def _check_payload(value: JsonValue) -> None:
             if key.lower() in BENCHMARK_FIELDS | SECRET_FIELDS:
                 raise AttributionInputError
             _check_payload(child)
-            
+
     elif isinstance(value, list):
         for child in value:
             _check_payload(child)

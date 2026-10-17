@@ -1,3 +1,4 @@
+import logging
 import time
 from typing import TypeVar
 
@@ -13,6 +14,7 @@ from app.core.exceptions import (
     LLMRefusalError,
     LLMTransientError,
 )
+from app.integrations.llm.diagnostics import output_diagnostics
 from app.schemas.attributions import (
     AttributionDecision,
     AttributionRequest,
@@ -22,6 +24,7 @@ from app.schemas.attributions import (
 from app.schemas.regression_specs import RegressionRequest, RegressionResult, RegressionSpec
 
 T = TypeVar("T", bound=BaseModel)
+logger = logging.getLogger(__name__)
 
 
 class OpenAILLMClient:
@@ -116,9 +119,27 @@ class OpenAILLMClient:
         ):
             raise LLMRefusalError(usage=usage)
         if not response.output_text:
-            raise LLMOutputError(usage=usage)
+            diagnostics = output_diagnostics(contract, request.prompt_version, "", None)
+            logger.warning(
+                "Structured output missing",
+                extra={
+                    "output_diagnostics": diagnostics.model_dump(mode="json"),
+                    **usage.model_dump(exclude_none=True),
+                },
+            )
+            raise LLMOutputError(usage=usage, diagnostics=diagnostics)
         try:
             parsed = contract.model_validate_json(response.output_text)
         except ValidationError as exc:
-            raise LLMOutputError(usage=usage) from exc
+            diagnostics = output_diagnostics(
+                contract, request.prompt_version, response.output_text, exc
+            )
+            logger.warning(
+                "Structured output rejected",
+                extra={
+                    "output_diagnostics": diagnostics.model_dump(mode="json"),
+                    **usage.model_dump(exclude_none=True),
+                },
+            )
+            raise LLMOutputError(usage=usage, diagnostics=diagnostics) from exc
         return parsed, usage

@@ -403,7 +403,12 @@ def test_migration_consistency_constraints_and_downgrade(setup_regression, postg
     attr = service.attributions.get(attr_id)
     original = service.runs.canonical_trace(attr.run_id)
     command.downgrade(config, "0003")
-    assert service.attributions.get(attr_id).status == "completed"
+    # The head ORM includes diagnostics introduced after revision 0003.
+    with sessions() as session:
+        assert (
+            session.scalar(select(Attribution.status).where(Attribution.id == attr_id))
+            == "completed"
+        )
     assert service.runs.canonical_trace(attr.run_id) == original
     command.upgrade(config, "head")
     command.check(config)

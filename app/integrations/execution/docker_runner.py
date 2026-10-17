@@ -159,7 +159,10 @@ class DockerValidationRunner:
             not isinstance(info, dict)
             or info.get("OSType") != "linux"
             or not all(info.get(key) for key in ("MemoryLimit", "PidsLimit", "CpuCfsQuota"))
-            or not any("seccomp" in option for option in info.get("SecurityOptions", []))
+            or not any(
+                isinstance(option, str) and option.split(",", 1)[0] == "name=seccomp"
+                for option in info.get("SecurityOptions", [])
+            )
         ):
             raise SandboxPolicyError
         images = self._json(["image", "inspect", image_reference])
@@ -209,6 +212,9 @@ class DockerValidationRunner:
             "ALL",
             "--security-opt",
             "no-new-privileges:true",
+            # Docker's daemon default can be unconfined; require its built-in filter.
+            "--security-opt",
+            "seccomp=builtin",
             "--memory",
             f"{s.validation_memory_mb}m",
             "--memory-swap",

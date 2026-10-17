@@ -84,6 +84,9 @@ class RegressionSpecOperation(Base):
     reasoning_tokens: Mapped[int | None]
     latency_ms: Mapped[int | None]
     input_sha256: Mapped[str | None] = mapped_column(String(64))
+    output_diagnostics: Mapped[dict[str, JsonValue] | None] = mapped_column(
+        JSONB(none_as_null=True)
+    )
     failure_code: Mapped[str | None] = mapped_column(String(100))
     failed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     completed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))

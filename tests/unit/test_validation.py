@@ -216,7 +216,57 @@ def test_container_policy_is_fixed_and_only_trusted_configuration_contributes_op
     assert "--read-only" in args and "--privileged" not in args
     assert "--mount" not in args and "--volume" not in args
     assert "unconfined" not in str(args) and "docker.sock" not in str(args)
+    security_options = [args[i + 1] for i, arg in enumerate(args) if arg == "--security-opt"]
+    assert security_options == ["no-new-privileges:true", "seccomp=builtin"]
     assert args[-1] == runtime.image_id
+
+
+@pytest.mark.parametrize(
+    "options,accepted",
+    [
+        (["name=seccomp,profile=builtin"], True),
+        (["name=seccomp,profile=unconfined"], True),
+        (["name=cgroupns"], False),
+        (["name=not-seccomp"], False),
+    ],
+)
+def test_preflight_requires_seccomp_capability_and_container_selects_filter(
+    settings, monkeypatch, options, accepted
+):
+    runner = DockerValidationRunner(settings)
+    responses = iter(
+        [
+            {
+                "OSType": "linux",
+                "MemoryLimit": True,
+                "PidsLimit": True,
+                "CpuCfsQuota": True,
+                "SecurityOptions": options,
+            },
+            [
+                {
+                    "Id": "sha256:" + "a" * 64,
+                    "Os": "linux",
+                    "Config": {
+                        "User": "10001:10001",
+                        "Entrypoint": ["python", "-I", "/opt/runner/entrypoint.py"],
+                        "Labels": {
+                            "org.traceguard.runtime": "regression-sandbox-v1",
+                            "org.traceguard.bundle": bundle_digest(),
+                        },
+                    },
+                }
+            ],
+        ]
+    )
+    monkeypatch.setattr(runner, "_json", lambda args: next(responses))
+    if accepted:
+        runtime = runner.prepare(settings.validation_image)
+        args = runner.create_args(runtime, "faulty", uuid4(), uuid4(), "unit")
+        assert "seccomp=builtin" in args
+    else:
+        with pytest.raises(SandboxPolicyError):
+            runner.prepare(settings.validation_image)
 
 
 @pytest.mark.parametrize(

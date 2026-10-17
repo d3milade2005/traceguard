@@ -18,13 +18,16 @@ from app.core.exceptions import (
     RegressionNotFoundError,
     RegressionNotSynthesizableError,
     RegressionValidationError,
+    ReplayContractError,
     RunNotNormalizedError,
     UnsupportedAssertionError,
     UnsupportedSpecVersionError,
+    ValidationArtifactError,
 )
 from app.core.logging import bind_log_context
 from app.db.models.generated_test import GeneratedTest
 from app.db.models.regression_spec import RegressionSpecOperation
+from app.integrations.execution.registry import approved_harness
 from app.regression_runtime import HARNESS_ID, HARNESS_VERSION
 from app.schemas.generated_tests import GeneratedTestRecord
 from app.schemas.regression_specs import RegressionRecord
@@ -151,6 +154,10 @@ class GeneratedTestService:
                             resolved.model_dump(mode="json")
                         ) != canonical_json(snapshot.model_dump(mode="json")):
                             raise InvalidScenarioSnapshotError
+                        try:
+                            approved_harness(HARNESS_ID, HARNESS_VERSION).check(spec, snapshot)
+                        except ValidationArtifactError as exc:
+                            raise ReplayContractError from exc
                         artifact = self.compiler.compile(record)
                         row.source_code = artifact.source_code
                         row.source_digest = artifact.source_digest

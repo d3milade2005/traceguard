@@ -1,7 +1,7 @@
 from datetime import datetime
 from uuid import UUID, uuid4
 
-from sqlalchemy import CheckConstraint, DateTime, ForeignKey, String, func
+from sqlalchemy import CheckConstraint, DateTime, ForeignKey, Index, String, func
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.db.base import Base
@@ -22,6 +22,7 @@ class Analysis(Base):
             name="terminal_state",
         ),
         CheckConstraint("status <> 'completed' OR stop_reason = 'valid'", name="success"),
+        Index("ix_analyses_status_deadline_at", "status", "deadline_at"),
     )
 
     id: Mapped[UUID] = mapped_column(primary_key=True, default=uuid4)

@@ -8,6 +8,7 @@ from uuid import UUID
 from pydantic import BaseModel, ConfigDict, Field, JsonValue, field_validator, model_validator
 
 from app.schemas.attributions import AttributionRequest, ProviderUsage, ReasoningEffort
+from app.schemas.llm_diagnostics import OutputDiagnostics
 
 Scalar = Annotated[str, Field(max_length=4096)] | bool | int | float | None
 PathKey = Annotated[str, Field(min_length=1, max_length=100, pattern=r"^[A-Za-z_][A-Za-z0-9_-]*$")]
@@ -141,6 +142,7 @@ class ScenarioSnapshot(BaseModel):
 
 
 class RegressionRecord(RegressionAccepted):
+    output_diagnostics: OutputDiagnostics | None = None
     disposition: Literal["synthesizable", "needs_review"] | None
     version: str | None
     title: str | None

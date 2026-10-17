@@ -28,6 +28,7 @@ from app.db.models import Analysis, Attribution, AttributionEvidence
 from app.integrations.llm.contracts import LLMClient
 from app.schemas.attributions import AttributionRecord, LLMResult, ProviderUsage, ReasoningEffort
 from app.schemas.context import AnalysisContext, TruncatedTraceStep
+from app.schemas.llm_diagnostics import OutputDiagnostics
 from app.schemas.traces import CanonicalTrace
 from app.services.attribution_input import (
     PROMPT_VERSION,
@@ -133,7 +134,7 @@ class AttributionService:
                 logger.exception("Attribution failed", extra={"status": "failed"})
                 if claim is not None and isinstance(exc, LLMOutputError) and exc.usage is not None:
                     try:
-                        self.record_usage(claim, exc.usage)
+                        self.record_usage(claim, exc.usage, diagnostics=exc.diagnostics)
                     except (OperationalError, TimeoutError) as database_error:
                         self.release(
                             attribution_id,
@@ -227,13 +228,20 @@ class AttributionService:
             row.context_manifest = context_manifest(context)
         return True
 
-    def record_usage(self, claim: AttributionClaim, usage: ProviderUsage) -> bool:
+    def record_usage(
+        self,
+        claim: AttributionClaim,
+        usage: ProviderUsage,
+        *,
+        diagnostics: OutputDiagnostics | None = None,
+    ) -> bool:
         with self.sessions.begin() as session:
             row = self._owned(session, claim)
             if row is None:
                 return False
             for field, value in usage.model_dump().items():
                 setattr(row, field, value)
+            row.output_diagnostics = diagnostics.model_dump(mode="json") if diagnostics else None
         return True
 
     def complete(

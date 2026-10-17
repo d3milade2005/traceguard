@@ -41,6 +41,7 @@ LOG_FIELDS = (
     "output_tokens",
     "reasoning_tokens",
     "latency_ms",
+    "output_diagnostics",
 )
 
 
@@ -94,6 +95,7 @@ def configure_logging(settings: Settings) -> None:
         make_url(database_url).password or "",
         unquote(urlsplit(broker_url).password or ""),
         settings.openai_api_key.get_secret_value() if settings.openai_api_key else "",
+        settings.github_client_secret.get_secret_value() if settings.github_client_secret else "",
     )
     handler = logging.StreamHandler(sys.stderr)
     handler.setFormatter(JsonFormatter(secrets))

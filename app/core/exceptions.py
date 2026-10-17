@@ -3,6 +3,7 @@ from uuid import UUID
 
 if TYPE_CHECKING:
     from app.schemas.attributions import ProviderUsage
+    from app.schemas.llm_diagnostics import OutputDiagnostics
 
 
 class ApplicationError(Exception):
@@ -10,6 +11,36 @@ class ApplicationError(Exception):
 
     code = "APPLICATION_ERROR"
     public_message = "The operation could not be completed."
+
+
+class AuthenticationRequiredError(ApplicationError):
+    code = "AUTHENTICATION_REQUIRED"
+    public_message = "Sign in to access this resource."
+
+
+class OAuthStateError(ApplicationError):
+    code = "OAUTH_STATE_INVALID"
+    public_message = "The sign-in attempt is invalid or expired. Start sign-in again."
+
+
+class UnsafeRedirectError(ApplicationError):
+    code = "AUTH_REDIRECT_INVALID"
+    public_message = "The requested destination is not a safe relative path."
+
+
+class CsrfError(ApplicationError):
+    code = "CSRF_ORIGIN_INVALID"
+    public_message = "The request origin is not allowed."
+
+
+class AuthConfigurationError(ApplicationError):
+    code = "AUTH_NOT_CONFIGURED"
+    public_message = "GitHub sign-in is not configured."
+
+
+class GitHubUnavailableError(ApplicationError):
+    code = "GITHUB_AUTH_UNAVAILABLE"
+    public_message = "GitHub sign-in could not be completed. Start sign-in again."
 
 
 class AnalysisNotFoundError(ApplicationError):
@@ -105,9 +136,15 @@ class LLMConfigurationError(LLMProviderError):
 class LLMOutputError(LLMProviderError):
     code = "LLM_OUTPUT_INVALID"
 
-    def __init__(self, *, usage: "ProviderUsage | None" = None) -> None:
+    def __init__(
+        self,
+        *,
+        usage: "ProviderUsage | None" = None,
+        diagnostics: "OutputDiagnostics | None" = None,
+    ) -> None:
         super().__init__(self.public_message)
         self.usage = usage
+        self.diagnostics = diagnostics
 
 
 class LLMRefusalError(LLMOutputError):
@@ -190,6 +227,11 @@ class UnsupportedAssertionError(CompilationInputError):
 class InvalidScenarioSnapshotError(CompilationInputError):
     code = "COMPILATION_SCENARIO_INVALID"
     public_message = "The regression scenario snapshot is invalid or does not match canonical data."
+
+
+class ReplayContractError(CompilationInputError):
+    code = "REPLAY_CONTRACT_INCOMPATIBLE"
+    public_message = "The selected scenario is incompatible with the approved replay harness."
 
 
 class CompilationInvariantError(CompilationError):

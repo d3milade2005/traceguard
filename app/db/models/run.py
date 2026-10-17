@@ -37,6 +37,7 @@ class Run(Base):
         ),
         CheckConstraint("processing_attempts >= 0", name="processing_attempts_nonnegative"),
         Index("ix_runs_status_created_at", "status", "created_at"),
+        Index("ix_runs_created_at_id", "created_at", "id"),
     )
 
     id: Mapped[UUID] = mapped_column(primary_key=True, default=uuid4)

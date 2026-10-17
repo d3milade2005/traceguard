@@ -3,7 +3,7 @@ import re
 from datetime import UTC, datetime
 from uuid import UUID
 
-from sqlalchemy import func, select, update
+from sqlalchemy import select, update
 from sqlalchemy.orm import Session, sessionmaker
 
 from app.core.exceptions import InvalidTraceError, RunNotFoundError, RunNotNormalizedError
@@ -11,6 +11,7 @@ from app.db.models import Run, RunStatus, TraceStep
 from app.schemas.runs import RunCreate, RunRecord, RunSummary
 from app.schemas.traces import CanonicalTrace
 from app.schemas.traces import TraceStep as CanonicalStep
+from app.services.run_reads import RunReadService
 
 logger = logging.getLogger(__name__)
 
@@ -25,28 +26,7 @@ class RunService:
             raise InvalidTraceError
 
     def summary(self, run_id: UUID) -> RunSummary:
-        # Avoid retrieving the potentially large BYTEA for polling requests.
-        count = select(func.count(TraceStep.id)).where(TraceStep.run_id == Run.id).scalar_subquery()
-        with self.sessions() as session:
-            row = (
-                session.execute(
-                    select(
-                        Run.id,
-                        Run.source,
-                        Run.status,
-                        Run.created_at,
-                        Run.updated_at,
-                        Run.failure_code,
-                        Run.failed_at,
-                        count.label("normalized_step_count"),
-                    ).where(Run.id == run_id)
-                )
-                .mappings()
-                .one_or_none()
-            )
-            if row is None:
-                raise RunNotFoundError
-            return RunSummary.model_validate(row)
+        return RunReadService(self.sessions).summary(run_id)
 
     def create(self, data: RunCreate) -> RunRecord:
         """Commit the unchanged source before returning to the queue handoff."""

@@ -1,0 +1,2483 @@
+{
+  "attribution_prompt_decision": "keep_attribution-v1",
+  "context_conclusion": "One missing annotated step is confirmed; the other nine non-joint-correct cases retain it. No context policy was tuned.",
+  "development_experiment_id": "08bb6be41c9c675a4da60f18decf32319039e529c955753f61f81487be215660",
+  "development_results_digest": "4ee592b90c8f677346d82ea6c4c9fc844d72201ea6ba058bb1c880d3a28d2529",
+  "handcrafted_role_conclusion": "No demonstrated speaker/recipient confusion. One OCR misread/abstention, one distinct later-agent attribution, and one omitted annotated event.",
+  "interpretation": "Reviewer classifications can overlap through secondary tags. They do not change benchmark labels, eligibility, scores, or prove a single correct causal explanation.",
+  "primary_counts": {
+    "abstention": 1,
+    "benchmark_semantic_disagreement": 3,
+    "context_evidence_missing": 1,
+    "correct_agent_wrong_step": 2,
+    "structured_output_failure": 1,
+    "wrong_agent": 2
+  },
+  "prompt_rationale": "Evidence-step choices recur, but v1 already requests originating failures and ambiguity-aware abstention. Errors also include earlier-vs-later benchmark disagreements in both directions. No consistent minimal prompt correction is established by this coverage-oriented 16-case sample. No equality rule between agent and step speaker is imposed.",
+  "provider_calls": 0,
+  "regression_prompt_decision": "keep_regression-spec-v1",
+  "reviewed_cases": [
+    {
+      "analysis_context_digest": "e6ffcd106e419259c6f6a6da1f13297cf87007e8529aade7c4a7436002cb9a5d",
+      "canonical_step_count": 20,
+      "canonical_trace_digest": "007cfbed37f9ce8898c21bb593877cc5f8baf954b33c606ced850cb66acf74fd",
+      "context": {
+        "budget": 65536,
+        "effective_budget": 61440,
+        "estimated_original_size": 25156,
+        "estimated_selected_size": 25156,
+        "full_trace_used": true,
+        "omitted_ranges": [],
+        "original_step_count": 20,
+        "pruning_occurred": false,
+        "reserved_headroom": 4096,
+        "selected_step_count": 20,
+        "size_unit": "utf8_bytes",
+        "truncated_sequences": [],
+        "visible_sequences": [
+          0,
+          1,
+          2,
+          3,
+          4,
+          5,
+          6,
+          7,
+          8,
+          9,
+          10,
+          11,
+          12,
+          13,
+          14,
+          15,
+          16,
+          17,
+          18,
+          19
+        ]
+      },
+      "failure": null,
+      "ground_truth": {
+        "annotation_anomaly": [
+          "nullable_fields"
+        ],
+        "eligible_agent_scoring": true,
+        "eligible_step_scoring": true,
+        "missing_fields": [],
+        "nullable_fields": [
+          "mistake_type"
+        ],
+        "raw": {
+          "ground_truth": null,
+          "groundtruth": "6",
+          "is_correct": null,
+          "is_corrected": false,
+          "mistake_agent": "Assistant",
+          "mistake_reason": "When listing the top 10 domestic movies, the assistant omitted 'Demon Slayer: Kimetsu no Yaiba - The Movie: Mugen Train' and included 'Wonder Woman 1984' instead. This led to an incorrect count of common movies between the two lists.",
+          "mistake_step": "16",
+          "mistake_type": null,
+          "question_ID": "2dfc4c37-fec1-4518-84a7-10095d30ad75"
+        },
+        "scoring_agent": "Assistant",
+        "scoring_sequence": 16
+      },
+      "original_canonical_content_equal": true,
+      "original_history_digest": "a4ce03e99489af8d0585ddae1527e43595f9eb41d65eb4f91f24175061e75aab",
+      "persisted_context_reconstructed_exactly": true,
+      "prediction": {
+        "abstention_reason": "The trace contains no visible failure or incorrect agent action to attribute; the reported answer appears supported by the visible evidence.",
+        "confidence": "high",
+        "decision": "abstain",
+        "decisive_sequence": null,
+        "evidence": [
+          {
+            "end_sequence": 8,
+            "reason": "Shows the worldwide top 10 list from Box Office Mojo.",
+            "start_sequence": 8
+          },
+          {
+            "end_sequence": 12,
+            "reason": "Shows the domestic-sorted Box Office Mojo results, including the relevant domestic top 10.",
+            "start_sequence": 12
+          },
+          {
+            "end_sequence": 16,
+            "reason": "Correctly lists the five overlapping movies and answers 5.",
+            "start_sequence": 16
+          }
+        ],
+        "explanation": "The visible trace supports the reported answer: sequence 8 provides the worldwide top 10, sequence 12 provides the domestic-sorted results, and sequence 16 correctly identifies five overlaps. No attributable failure is visible.",
+        "failure_category": null,
+        "responsible_agent": null
+      },
+      "primary_classification": "abstention",
+      "rationale": "Full-context OCR at 12 includes Demon Slayer within the first ten domestic entries; Assistant at 16 substitutes Wonder Woman. Abstention incorrectly accepts that list. No role ambiguity or missing context explains it.",
+      "sample_id": "Hand-Crafted/0d8b79c04fad4e86f7aad814e301d5b895d7827093c85a1df57be570eb9a5d3a/0",
+      "secondary_classifications": [],
+      "step_speakers_and_recipients": [
+        {
+          "agent": null,
+          "recipient": null,
+          "role": "human",
+          "sequence": 0
+        },
+        {
+          "agent": "Orchestrator",
+          "recipient": null,
+          "role": "Orchestrator (thought)",
+          "sequence": 1
+        },
+        {
+          "agent": "Orchestrator",
+          "recipient": null,
+          "role": "Orchestrator (thought)",
+          "sequence": 2
+        },
+        {
+          "agent": "Orchestrator",
+          "recipient": "WebSurfer",
+          "role": "Orchestrator (-> WebSurfer)",
+          "sequence": 3
+        },
+        {
+          "agent": "WebSurfer",
+          "recipient": null,
+          "role": "WebSurfer",
+          "sequence": 4
+        },
+        {
+          "agent": "Orchestrator",
+          "recipient": null,
+          "role": "Orchestrator (thought)",
+          "sequence": 5
+        },
+        {
+          "agent": "Orchestrator",
+          "recipient": "WebSurfer",
+          "role": "Orchestrator (-> WebSurfer)",
+          "sequence": 6
+        },
+        {
+          "agent": "Orchestrator",
+          "recipient": null,
+          "role": "Orchestrator (thought)",
+          "sequence": 7
+        },
+        {
+          "agent": "WebSurfer",
+          "recipient": null,
+          "role": "WebSurfer",
+          "sequence": 8
+        },
+        {
+          "agent": "Orchestrator",
+          "recipient": null,
+          "role": "Orchestrator (thought)",
+          "sequence": 9
+        },
+        {
+          "agent": "Orchestrator",
+          "recipient": "WebSurfer",
+          "role": "Orchestrator (-> WebSurfer)",
+          "sequence": 10
+        },
+        {
+          "agent": "Orchestrator",
+          "recipient": null,
+          "role": "Orchestrator (thought)",
+          "sequence": 11
+        },
+        {
+          "agent": "WebSurfer",
+          "recipient": null,
+          "role": "WebSurfer",
+          "sequence": 12
+        },
+        {
+          "agent": "Orchestrator",
+          "recipient": null,
+          "role": "Orchestrator (thought)",
+          "sequence": 13
+        },
+        {
+          "agent": "Orchestrator",
+          "recipient": "Assistant",
+          "role": "Orchestrator (-> Assistant)",
+          "sequence": 14
+        },
+        {
+          "agent": "Orchestrator",
+          "recipient": null,
+          "role": "Orchestrator (thought)",
+          "sequence": 15
+        },
+        {
+          "agent": "Assistant",
+          "recipient": null,
+          "role": "Assistant",
+          "sequence": 16
+        },
+        {
+          "agent": "Orchestrator",
+          "recipient": null,
+          "role": "Orchestrator (thought)",
+          "sequence": 17
+        },
+        {
+          "agent": "Orchestrator",
+          "recipient": null,
+          "role": "Orchestrator (thought)",
+          "sequence": 18
+        },
+        {
+          "agent": "Orchestrator",
+          "recipient": null,
+          "role": "Orchestrator (termination condition)",
+          "sequence": 19
+        }
+      ],
+      "subset": "Hand-Crafted"
+    },
+    {
+      "analysis_context_digest": "49aec494aae3430ddb787a8f9ae4c19e7e7ce0b48860ad387e43d4371d4b3e5d",
+      "canonical_step_count": 10,
+      "canonical_trace_digest": "e43e2f66a0e82287de5e6c5e536f1384824b89d151f37e1e3dbd935ad6fbcc0f",
+      "context": {
+        "budget": 65536,
+        "effective_budget": 61440,
+        "estimated_original_size": 13345,
+        "estimated_selected_size": 13345,
+        "full_trace_used": true,
+        "omitted_ranges": [],
+        "original_step_count": 10,
+        "pruning_occurred": false,
+        "reserved_headroom": 4096,
+        "selected_step_count": 10,
+        "size_unit": "utf8_bytes",
+        "truncated_sequences": [],
+        "visible_sequences": [
+          0,
+          1,
+          2,
+          3,
+          4,
+          5,
+          6,
+          7,
+          8,
+          9
+        ]
+      },
+      "failure": null,
+      "ground_truth": {
+        "annotation_anomaly": [],
+        "eligible_agent_scoring": true,
+        "eligible_step_scoring": true,
+        "missing_fields": [],
+        "nullable_fields": [],
+        "raw": {
+          "ground_truth": "30",
+          "groundtruth": null,
+          "is_correct": false,
+          "is_corrected": null,
+          "mistake_agent": "HistoricalWeatherData_Expert",
+          "mistake_reason": "The expert uses placeholders in the code to fetch data from an API, resulting in errors due to missing actual values.",
+          "mistake_step": "4",
+          "mistake_type": null,
+          "question_ID": "e2dc3a6b10b762e8aba7fa4d4e70f757f6d04dcbc8b56c48fc53fd9928d31d07"
+        },
+        "scoring_agent": "HistoricalWeatherData_Expert",
+        "scoring_sequence": 4
+      },
+      "original_canonical_content_equal": true,
+      "original_history_digest": "23d2fd0f9e9e8f04806bad174901f916cb6831eb152df3a602babe05971a8529",
+      "persisted_context_reconstructed_exactly": true,
+      "prediction": {
+        "abstention_reason": null,
+        "confidence": "high",
+        "decision": "attributed",
+        "decisive_sequence": 6,
+        "evidence": [
+          {
+            "end_sequence": 5,
+            "reason": "The attempted API retrieval failed for every year with 404 responses, leaving no actual weather data.",
+            "start_sequence": 5
+          },
+          {
+            "end_sequence": 6,
+            "reason": "Statistics_Expert explicitly proposed creating and using a mock dataset instead of obtaining reliable historical data.",
+            "start_sequence": 6
+          },
+          {
+            "end_sequence": 8,
+            "reason": "The mock calculation produced 60.00%, and Validation_Expert stated that the simulated result could not be deemed reliable without actual historical data.",
+            "start_sequence": 7
+          }
+        ],
+        "explanation": "The Statistics_Expert proposed replacing unavailable historical observations with a simulated dataset, so the resulting percentage was not evidence-based. The subsequent 60.00% output was explicitly recognized as unreliable.",
+        "failure_category": "unsupported mock data",
+        "responsible_agent": "Statistics_Expert"
+      },
+      "primary_classification": "wrong_agent",
+      "rationale": "Placeholder endpoint/key at 4 precedes failed retrieval at 5 and mock-data substitution at 6. Prediction selects the later substitution. Both are real violations; the benchmark selects the earlier API attempt.",
+      "sample_id": "Algorithm-Generated/3c12f235ac81affa533b017515d6ce3d61948ae3a9da1260271d5fdd2d0fd491/0",
+      "secondary_classifications": [
+        "downstream_symptom_selected"
+      ],
+      "step_speakers_and_recipients": [
+        {
+          "agent": "HistoricalWeatherData_Expert",
+          "recipient": null,
+          "role": "assistant",
+          "sequence": 0
+        },
+        {
+          "agent": "Computer_terminal",
+          "recipient": null,
+          "role": "user",
+          "sequence": 1
+        },
+        {
+          "agent": "Validation_Expert",
+          "recipient": null,
+          "role": "user",
+          "sequence": 2
+        },
+        {
+          "agent": "Computer_terminal",
+          "recipient": null,
+          "role": "user",
+          "sequence": 3
+        },
+        {
+          "agent": "HistoricalWeatherData_Expert",
+          "recipient": null,
+          "role": "assistant",
+          "sequence": 4
+        },
+        {
+          "agent": "Computer_terminal",
+          "recipient": null,
+          "role": "user",
+          "sequence": 5
+        },
+        {
+          "agent": "Statistics_Expert",
+          "recipient": null,
+          "role": "user",
+          "sequence": 6
+        },
+        {
+          "agent": "Computer_terminal",
+          "recipient": null,
+          "role": "user",
+          "sequence": 7
+        },
+        {
+          "agent": "Validation_Expert",
+          "recipient": null,
+          "role": "user",
+          "sequence": 8
+        },
+        {
+          "agent": "HistoricalWeatherData_Expert",
+          "recipient": null,
+          "role": "assistant",
+          "sequence": 9
+        }
+      ],
+      "subset": "Algorithm-Generated"
+    },
+    {
+      "analysis_context_digest": "65b3e0c39271c70211419952aa49885dc204f57efc9a7fb3f8773c2f366a758b",
+      "canonical_step_count": 10,
+      "canonical_trace_digest": "5bd8bd149d2fe88464d234186712d8c7651cd86745bb27031dd3f7045d30f224",
+      "context": {
+        "budget": 65536,
+        "effective_budget": 61440,
+        "estimated_original_size": 12468,
+        "estimated_selected_size": 12468,
+        "full_trace_used": true,
+        "omitted_ranges": [],
+        "original_step_count": 10,
+        "pruning_occurred": false,
+        "reserved_headroom": 4096,
+        "selected_step_count": 10,
+        "size_unit": "utf8_bytes",
+        "truncated_sequences": [],
+        "visible_sequences": [
+          0,
+          1,
+          2,
+          3,
+          4,
+          5,
+          6,
+          7,
+          8,
+          9
+        ]
+      },
+      "failure": {
+        "code": "LLM_OUTPUT_INVALID",
+        "stage": "attribution_provider",
+        "type": "LLMOutputError",
+        "usage": {
+          "input_tokens": 3429,
+          "latency_ms": 6938,
+          "output_tokens": 353,
+          "reasoning_tokens": 178,
+          "response_id": "resp_0791cf889a1776f0016ad329c26a1887d1b579a51d008a9e3e",
+          "response_model": "gpt-5.6-luna"
+        }
+      },
+      "ground_truth": {
+        "annotation_anomaly": [],
+        "eligible_agent_scoring": true,
+        "eligible_step_scoring": true,
+        "missing_fields": [],
+        "nullable_fields": [],
+        "raw": {
+          "ground_truth": "War is not here this is a land of peace",
+          "groundtruth": null,
+          "is_correct": false,
+          "is_corrected": null,
+          "mistake_agent": "WebDevelopment_Expert",
+          "mistake_reason": "The code provided by WebDevelopment_Expert is incorrect.",
+          "mistake_step": "1",
+          "mistake_type": null,
+          "question_ID": "ad2b4d70-9314-4fe6-bfbe-894a45f6055f"
+        },
+        "scoring_agent": "WebDevelopment_Expert",
+        "scoring_sequence": 1
+      },
+      "original_canonical_content_equal": true,
+      "original_history_digest": "b993e6c3b8ae1d32b40bc2ba7c0292aa10e26dc83e2702f2d1ca8156890f2467",
+      "persisted_context_reconstructed_exactly": true,
+      "prediction": null,
+      "primary_classification": "structured_output_failure",
+      "rationale": "All ten original steps are present. No parsed prediction was retained. Usage and response ID exist, but the precise contract violation is unrecoverable; no causal explanation is inferred.",
+      "sample_id": "Algorithm-Generated/3c310f4a7a83b8b3b82a107311b9ce8657cb81f75f7b95d0562bf1a6b761c85c/0",
+      "secondary_classifications": [],
+      "step_speakers_and_recipients": [
+        {
+          "agent": "Web_Design_Expert",
+          "recipient": null,
+          "role": "assistant",
+          "sequence": 0
+        },
+        {
+          "agent": "WebDevelopment_Expert",
+          "recipient": null,
+          "role": "user",
+          "sequence": 1
+        },
+        {
+          "agent": "Computer_terminal",
+          "recipient": null,
+          "role": "user",
+          "sequence": 2
+        },
+        {
+          "agent": "Web_Design_Expert",
+          "recipient": null,
+          "role": "assistant",
+          "sequence": 3
+        },
+        {
+          "agent": "Web_Design_Expert",
+          "recipient": null,
+          "role": "assistant",
+          "sequence": 4
+        },
+        {
+          "agent": "Web_Design_Expert",
+          "recipient": null,
+          "role": "assistant",
+          "sequence": 5
+        },
+        {
+          "agent": "Web_Design_Expert",
+          "recipient": null,
+          "role": "assistant",
+          "sequence": 6
+        },
+        {
+          "agent": "GraphicDesign_Expert",
+          "recipient": null,
+          "role": "user",
+          "sequence": 7
+        },
+        {
+          "agent": "Web_Design_Expert",
+          "recipient": null,
+          "role": "assistant",
+          "sequence": 8
+        },
+        {
+          "agent": "GraphicDesign_Expert",
+          "recipient": null,
+          "role": "user",
+          "sequence": 9
+        }
+      ],
+      "subset": "Algorithm-Generated"
+    },
+    {
+      "analysis_context_digest": "63dcfdaddf72082e8b5e4383d9a05b360cd0bf231cb1534ea81e817e14981937",
+      "canonical_step_count": 32,
+      "canonical_trace_digest": "b6622554bfc4af393cf79c050039e14d1ad5c2e826b84f814e7c2b8d65e647ff",
+      "context": {
+        "budget": 65536,
+        "effective_budget": 61440,
+        "estimated_original_size": 71645,
+        "estimated_selected_size": 56637,
+        "full_trace_used": false,
+        "omitted_ranges": [
+          {
+            "end": 9,
+            "start": 3
+          }
+        ],
+        "original_step_count": 32,
+        "pruning_occurred": true,
+        "reserved_headroom": 4096,
+        "selected_step_count": 25,
+        "size_unit": "utf8_bytes",
+        "truncated_sequences": [],
+        "visible_sequences": [
+          0,
+          1,
+          2,
+          10,
+          11,
+          12,
+          13,
+          14,
+          15,
+          16,
+          17,
+          18,
+          19,
+          20,
+          21,
+          22,
+          23,
+          24,
+          25,
+          26,
+          27,
+          28,
+          29,
+          30,
+          31
+        ]
+      },
+      "failure": null,
+      "ground_truth": {
+        "annotation_anomaly": [
+          "nullable_fields"
+        ],
+        "eligible_agent_scoring": true,
+        "eligible_step_scoring": true,
+        "missing_fields": [],
+        "nullable_fields": [
+          "mistake_type"
+        ],
+        "raw": {
+          "ground_truth": null,
+          "groundtruth": "0.00033",
+          "is_correct": null,
+          "is_corrected": false,
+          "mistake_agent": "Orchestrator",
+          "mistake_reason": "The code is wrong.",
+          "mistake_step": "14",
+          "mistake_type": null,
+          "question_ID": "8d46b8d6-b38a-47ff-ac74-cda14cf2d19b"
+        },
+        "scoring_agent": "Orchestrator",
+        "scoring_sequence": 14
+      },
+      "original_canonical_content_equal": true,
+      "original_history_digest": "85a3a4ba9b8b2904df635d42252c6f1ccbdb689fc63c78c10c522982b721595a",
+      "persisted_context_reconstructed_exactly": true,
+      "prediction": {
+        "abstention_reason": null,
+        "confidence": "medium",
+        "decision": "attributed",
+        "decisive_sequence": 28,
+        "evidence": [
+          {
+            "end_sequence": 24,
+            "reason": "The visible population table lists species estimates but does not show the asserted 59-million total.",
+            "start_sequence": 24
+          },
+          {
+            "end_sequence": 28,
+            "reason": "WebSurfer introduces the unsupported 59-million estimate, which is the originating factual error.",
+            "start_sequence": 28
+          },
+          {
+            "end_sequence": 31,
+            "reason": "The Orchestrator adopts 59,000,000 and produces 0.00049 based on it.",
+            "start_sequence": 29
+          }
+        ],
+        "explanation": "WebSurfer asserted an upper total of approximately 59 million at sequence 28, but the visible Wikipedia evidence at sequence 24 does not support that figure. The Orchestrator then accepted it and used it to produce the final percentage.",
+        "failure_category": "unsupported factual claim",
+        "responsible_agent": "WebSurfer"
+      },
+      "primary_classification": "wrong_agent",
+      "rationale": "Annotated step 14 is Orchestrator speaking to ComputerTerminal and producing code. Adapter retains that speaker and recipient correctly, and 14 is visible. Prediction explicitly blames a different later WebSurfer claim at 28. This is not recipient/speaker confusion. Predicate interpretation and unsupported population evidence are separate issues; no annotation is corrected.",
+      "sample_id": "Hand-Crafted/0c3988a06834db955efc447a053100bdc310a9fc7c30a527159eec07dce861ee/0",
+      "secondary_classifications": [
+        "downstream_symptom_selected"
+      ],
+      "step_speakers_and_recipients": [
+        {
+          "agent": null,
+          "recipient": null,
+          "role": "human",
+          "sequence": 0
+        },
+        {
+          "agent": "Orchestrator",
+          "recipient": null,
+          "role": "Orchestrator (thought)",
+          "sequence": 1
+        },
+        {
+          "agent": "Orchestrator",
+          "recipient": null,
+          "role": "Orchestrator (thought)",
+          "sequence": 2
+        },
+        {
+          "agent": "Orchestrator",
+          "recipient": "WebSurfer",
+          "role": "Orchestrator (-> WebSurfer)",
+          "sequence": 3
+        },
+        {
+          "agent": "WebSurfer",
+          "recipient": null,
+          "role": "WebSurfer",
+          "sequence": 4
+        },
+        {
+          "agent": "Orchestrator",
+          "recipient": null,
+          "role": "Orchestrator (thought)",
+          "sequence": 5
+        },
+        {
+          "agent": "Orchestrator",
+          "recipient": "FileSurfer",
+          "role": "Orchestrator (-> FileSurfer)",
+          "sequence": 6
+        },
+        {
+          "agent": "Orchestrator",
+          "recipient": null,
+          "role": "Orchestrator (thought)",
+          "sequence": 7
+        },
+        {
+          "agent": "FileSurfer",
+          "recipient": null,
+          "role": "FileSurfer",
+          "sequence": 8
+        },
+        {
+          "agent": "Orchestrator",
+          "recipient": null,
+          "role": "Orchestrator (thought)",
+          "sequence": 9
+        },
+        {
+          "agent": "Orchestrator",
+          "recipient": "ComputerTerminal",
+          "role": "Orchestrator (-> ComputerTerminal)",
+          "sequence": 10
+        },
+        {
+          "agent": "Orchestrator",
+          "recipient": null,
+          "role": "Orchestrator (thought)",
+          "sequence": 11
+        },
+        {
+          "agent": "ComputerTerminal",
+          "recipient": null,
+          "role": "ComputerTerminal",
+          "sequence": 12
+        },
+        {
+          "agent": "Orchestrator",
+          "recipient": null,
+          "role": "Orchestrator (thought)",
+          "sequence": 13
+        },
+        {
+          "agent": "Orchestrator",
+          "recipient": "ComputerTerminal",
+          "role": "Orchestrator (-> ComputerTerminal)",
+          "sequence": 14
+        },
+        {
+          "agent": "Orchestrator",
+          "recipient": null,
+          "role": "Orchestrator (thought)",
+          "sequence": 15
+        },
+        {
+          "agent": "ComputerTerminal",
+          "recipient": null,
+          "role": "ComputerTerminal",
+          "sequence": 16
+        },
+        {
+          "agent": "Orchestrator",
+          "recipient": null,
+          "role": "Orchestrator (thought)",
+          "sequence": 17
+        },
+        {
+          "agent": "Orchestrator",
+          "recipient": "WebSurfer",
+          "role": "Orchestrator (-> WebSurfer)",
+          "sequence": 18
+        },
+        {
+          "agent": "Orchestrator",
+          "recipient": null,
+          "role": "Orchestrator (thought)",
+          "sequence": 19
+        },
+        {
+          "agent": "WebSurfer",
+          "recipient": null,
+          "role": "WebSurfer",
+          "sequence": 20
+        },
+        {
+          "agent": "Orchestrator",
+          "recipient": null,
+          "role": "Orchestrator (thought)",
+          "sequence": 21
+        },
+        {
+          "agent": "Orchestrator",
+          "recipient": "WebSurfer",
+          "role": "Orchestrator (-> WebSurfer)",
+          "sequence": 22
+        },
+        {
+          "agent": "Orchestrator",
+          "recipient": null,
+          "role": "Orchestrator (thought)",
+          "sequence": 23
+        },
+        {
+          "agent": "WebSurfer",
+          "recipient": null,
+          "role": "WebSurfer",
+          "sequence": 24
+        },
+        {
+          "agent": "Orchestrator",
+          "recipient": null,
+          "role": "Orchestrator (thought)",
+          "sequence": 25
+        },
+        {
+          "agent": "Orchestrator",
+          "recipient": "WebSurfer",
+          "role": "Orchestrator (-> WebSurfer)",
+          "sequence": 26
+        },
+        {
+          "agent": "Orchestrator",
+          "recipient": null,
+          "role": "Orchestrator (thought)",
+          "sequence": 27
+        },
+        {
+          "agent": "WebSurfer",
+          "recipient": null,
+          "role": "WebSurfer",
+          "sequence": 28
+        },
+        {
+          "agent": "Orchestrator",
+          "recipient": null,
+          "role": "Orchestrator (thought)",
+          "sequence": 29
+        },
+        {
+          "agent": "Orchestrator",
+          "recipient": null,
+          "role": "Orchestrator (thought)",
+          "sequence": 30
+        },
+        {
+          "agent": "Orchestrator",
+          "recipient": null,
+          "role": "Orchestrator (termination condition)",
+          "sequence": 31
+        }
+      ],
+      "subset": "Hand-Crafted"
+    },
+    {
+      "analysis_context_digest": "8085756a5c466478174675a9fd999f8470196456f0e60220a78cc3f480940b70",
+      "canonical_step_count": 130,
+      "canonical_trace_digest": "e8a79398516945032d22af54785ccdb7fb44939b910560f81f2f9eea33beb2d5",
+      "context": {
+        "budget": 65536,
+        "effective_budget": 61440,
+        "estimated_original_size": 194132,
+        "estimated_selected_size": 59913,
+        "full_trace_used": false,
+        "omitted_ranges": [
+          {
+            "end": 76,
+            "start": 3
+          },
+          {
+            "end": 95,
+            "start": 94
+          },
+          {
+            "end": 114,
+            "start": 113
+          },
+          {
+            "end": 125,
+            "start": 124
+          }
+        ],
+        "original_step_count": 130,
+        "pruning_occurred": true,
+        "reserved_headroom": 4096,
+        "selected_step_count": 50,
+        "size_unit": "utf8_bytes",
+        "truncated_sequences": [],
+        "visible_sequences": [
+          0,
+          1,
+          2,
+          77,
+          78,
+          79,
+          80,
+          81,
+          82,
+          83,
+          84,
+          85,
+          86,
+          87,
+          88,
+          89,
+          90,
+          91,
+          92,
+          93,
+          96,
+          97,
+          98,
+          99,
+          100,
+          101,
+          102,
+          103,
+          104,
+          105,
+          106,
+          107,
+          108,
+          109,
+          110,
+          111,
+          112,
+          115,
+          116,
+          117,
+          118,
+          119,
+          120,
+          121,
+          122,
+          123,
+          126,
+          127,
+          128,
+          129
+        ]
+      },
+      "failure": null,
+      "ground_truth": {
+        "annotation_anomaly": [
+          "nullable_fields"
+        ],
+        "eligible_agent_scoring": true,
+        "eligible_step_scoring": true,
+        "missing_fields": [],
+        "nullable_fields": [
+          "mistake_type"
+        ],
+        "raw": {
+          "ground_truth": null,
+          "groundtruth": "6:41 PM",
+          "is_correct": null,
+          "is_corrected": false,
+          "mistake_agent": "WebSurfer",
+          "mistake_reason": "The search tool does not return the desired information regarding the passenger count of each train in 2019. Therefore, the train with the highest number of passengers and its scheduled arrival time at Pompano Beach cannot be determined.",
+          "mistake_step": "32",
+          "mistake_type": null,
+          "question_ID": "16d825ff-1623-4176-a5b5-42e0f5c2b0ac"
+        },
+        "scoring_agent": "WebSurfer",
+        "scoring_sequence": 32
+      },
+      "original_canonical_content_equal": true,
+      "original_history_digest": "37f608748266a832941bea04d70adbe5765d5746a784bd4a169e5daedc4f98be",
+      "persisted_context_reconstructed_exactly": true,
+      "prediction": {
+        "abstention_reason": null,
+        "confidence": "high",
+        "decision": "attributed",
+        "decisive_sequence": 129,
+        "evidence": [
+          {
+            "end_sequence": 123,
+            "reason": "The Orchestrator acknowledged that repeated attempts had not obtained the required ridership and schedule information and marked the process stalled.",
+            "start_sequence": 122
+          },
+          {
+            "end_sequence": 128,
+            "reason": "The WebSurfer found only general contact details and a LiveChat reference; no evidence identified the busiest train or its arrival time.",
+            "start_sequence": 126
+          },
+          {
+            "end_sequence": 129,
+            "reason": "The Orchestrator issued the unsupported final answer “5:30 PM” and terminated the run.",
+            "start_sequence": 129
+          }
+        ],
+        "explanation": "The Orchestrator terminated with “FINAL ANSWER: 5:30 PM” despite the visible trace never establishing the busiest train or its Pompano Beach arrival time. The preceding search remained limited to contact information and produced no ridership evidence.",
+        "failure_category": "unsupported final answer",
+        "responsible_agent": "Orchestrator"
+      },
+      "primary_classification": "context_evidence_missing",
+      "rationale": "In the 130-step original history, benchmark step 32 is omitted by context selection. Prediction attributes unsupported final-answer step 129 instead. That later event is visible, but cannot recover the missing annotated event. Length alone does not prove model confusion or that pruning caused this choice.",
+      "sample_id": "Hand-Crafted/bd19293a21a5348f5573051a59257fb45a971c2de354894d635e8d9d9b929b72/0",
+      "secondary_classifications": [
+        "downstream_symptom_selected"
+      ],
+      "step_speakers_and_recipients": [
+        {
+          "agent": null,
+          "recipient": null,
+          "role": "human",
+          "sequence": 0
+        },
+        {
+          "agent": "Orchestrator",
+          "recipient": null,
+          "role": "Orchestrator (thought)",
+          "sequence": 1
+        },
+        {
+          "agent": "Orchestrator",
+          "recipient": null,
+          "role": "Orchestrator (thought)",
+          "sequence": 2
+        },
+        {
+          "agent": "Orchestrator",
+          "recipient": "WebSurfer",
+          "role": "Orchestrator (-> WebSurfer)",
+          "sequence": 3
+        },
+        {
+          "agent": "WebSurfer",
+          "recipient": null,
+          "role": "WebSurfer",
+          "sequence": 4
+        },
+        {
+          "agent": "Orchestrator",
+          "recipient": null,
+          "role": "Orchestrator (thought)",
+          "sequence": 5
+        },
+        {
+          "agent": "Orchestrator",
+          "recipient": "WebSurfer",
+          "role": "Orchestrator (-> WebSurfer)",
+          "sequence": 6
+        },
+        {
+          "agent": "Orchestrator",
+          "recipient": null,
+          "role": "Orchestrator (thought)",
+          "sequence": 7
+        },
+        {
+          "agent": "WebSurfer",
+          "recipient": null,
+          "role": "WebSurfer",
+          "sequence": 8
+        },
+        {
+          "agent": "Orchestrator",
+          "recipient": null,
+          "role": "Orchestrator (thought)",
+          "sequence": 9
+        },
+        {
+          "agent": "Orchestrator",
+          "recipient": "WebSurfer",
+          "role": "Orchestrator (-> WebSurfer)",
+          "sequence": 10
+        },
+        {
+          "agent": "Orchestrator",
+          "recipient": null,
+          "role": "Orchestrator (thought)",
+          "sequence": 11
+        },
+        {
+          "agent": "WebSurfer",
+          "recipient": null,
+          "role": "WebSurfer",
+          "sequence": 12
+        },
+        {
+          "agent": "Orchestrator",
+          "recipient": null,
+          "role": "Orchestrator (thought)",
+          "sequence": 13
+        },
+        {
+          "agent": "Orchestrator",
+          "recipient": "WebSurfer",
+          "role": "Orchestrator (-> WebSurfer)",
+          "sequence": 14
+        },
+        {
+          "agent": "Orchestrator",
+          "recipient": null,
+          "role": "Orchestrator (thought)",
+          "sequence": 15
+        },
+        {
+          "agent": "WebSurfer",
+          "recipient": null,
+          "role": "WebSurfer",
+          "sequence": 16
+        },
+        {
+          "agent": "Orchestrator",
+          "recipient": null,
+          "role": "Orchestrator (thought)",
+          "sequence": 17
+        },
+        {
+          "agent": "Orchestrator",
+          "recipient": "WebSurfer",
+          "role": "Orchestrator (-> WebSurfer)",
+          "sequence": 18
+        },
+        {
+          "agent": "Orchestrator",
+          "recipient": null,
+          "role": "Orchestrator (thought)",
+          "sequence": 19
+        },
+        {
+          "agent": "WebSurfer",
+          "recipient": null,
+          "role": "WebSurfer",
+          "sequence": 20
+        },
+        {
+          "agent": "Orchestrator",
+          "recipient": null,
+          "role": "Orchestrator (thought)",
+          "sequence": 21
+        },
+        {
+          "agent": "Orchestrator",
+          "recipient": "WebSurfer",
+          "role": "Orchestrator (-> WebSurfer)",
+          "sequence": 22
+        },
+        {
+          "agent": "Orchestrator",
+          "recipient": null,
+          "role": "Orchestrator (thought)",
+          "sequence": 23
+        },
+        {
+          "agent": "WebSurfer",
+          "recipient": null,
+          "role": "WebSurfer",
+          "sequence": 24
+        },
+        {
+          "agent": "Orchestrator",
+          "recipient": null,
+          "role": "Orchestrator (thought)",
+          "sequence": 25
+        },
+        {
+          "agent": "Orchestrator",
+          "recipient": "WebSurfer",
+          "role": "Orchestrator (-> WebSurfer)",
+          "sequence": 26
+        },
+        {
+          "agent": "Orchestrator",
+          "recipient": null,
+          "role": "Orchestrator (thought)",
+          "sequence": 27
+        },
+        {
+          "agent": "WebSurfer",
+          "recipient": null,
+          "role": "WebSurfer",
+          "sequence": 28
+        },
+        {
+          "agent": "Orchestrator",
+          "recipient": null,
+          "role": "Orchestrator (thought)",
+          "sequence": 29
+        },
+        {
+          "agent": "Orchestrator",
+          "recipient": "WebSurfer",
+          "role": "Orchestrator (-> WebSurfer)",
+          "sequence": 30
+        },
+        {
+          "agent": "Orchestrator",
+          "recipient": null,
+          "role": "Orchestrator (thought)",
+          "sequence": 31
+        },
+        {
+          "agent": "WebSurfer",
+          "recipient": null,
+          "role": "WebSurfer",
+          "sequence": 32
+        },
+        {
+          "agent": "Orchestrator",
+          "recipient": null,
+          "role": "Orchestrator (thought)",
+          "sequence": 33
+        },
+        {
+          "agent": "Orchestrator",
+          "recipient": "WebSurfer",
+          "role": "Orchestrator (-> WebSurfer)",
+          "sequence": 34
+        },
+        {
+          "agent": "Orchestrator",
+          "recipient": null,
+          "role": "Orchestrator (thought)",
+          "sequence": 35
+        },
+        {
+          "agent": "WebSurfer",
+          "recipient": null,
+          "role": "WebSurfer",
+          "sequence": 36
+        },
+        {
+          "agent": "Orchestrator",
+          "recipient": null,
+          "role": "Orchestrator (thought)",
+          "sequence": 37
+        },
+        {
+          "agent": "Orchestrator",
+          "recipient": "WebSurfer",
+          "role": "Orchestrator (-> WebSurfer)",
+          "sequence": 38
+        },
+        {
+          "agent": "Orchestrator",
+          "recipient": null,
+          "role": "Orchestrator (thought)",
+          "sequence": 39
+        },
+        {
+          "agent": "WebSurfer",
+          "recipient": null,
+          "role": "WebSurfer",
+          "sequence": 40
+        },
+        {
+          "agent": "Orchestrator",
+          "recipient": null,
+          "role": "Orchestrator (thought)",
+          "sequence": 41
+        },
+        {
+          "agent": "Orchestrator",
+          "recipient": null,
+          "role": "Orchestrator (thought)",
+          "sequence": 42
+        },
+        {
+          "agent": "Orchestrator",
+          "recipient": null,
+          "role": "Orchestrator (thought)",
+          "sequence": 43
+        },
+        {
+          "agent": "Orchestrator",
+          "recipient": null,
+          "role": "Orchestrator (thought)",
+          "sequence": 44
+        },
+        {
+          "agent": "Orchestrator",
+          "recipient": "WebSurfer",
+          "role": "Orchestrator (-> WebSurfer)",
+          "sequence": 45
+        },
+        {
+          "agent": "Orchestrator",
+          "recipient": null,
+          "role": "Orchestrator (thought)",
+          "sequence": 46
+        },
+        {
+          "agent": "WebSurfer",
+          "recipient": null,
+          "role": "WebSurfer",
+          "sequence": 47
+        },
+        {
+          "agent": "Orchestrator",
+          "recipient": null,
+          "role": "Orchestrator (thought)",
+          "sequence": 48
+        },
+        {
+          "agent": "Orchestrator",
+          "recipient": "WebSurfer",
+          "role": "Orchestrator (-> WebSurfer)",
+          "sequence": 49
+        },
+        {
+          "agent": "Orchestrator",
+          "recipient": null,
+          "role": "Orchestrator (thought)",
+          "sequence": 50
+        },
+        {
+          "agent": "WebSurfer",
+          "recipient": null,
+          "role": "WebSurfer",
+          "sequence": 51
+        },
+        {
+          "agent": "Orchestrator",
+          "recipient": null,
+          "role": "Orchestrator (thought)",
+          "sequence": 52
+        },
+        {
+          "agent": "Orchestrator",
+          "recipient": "WebSurfer",
+          "role": "Orchestrator (-> WebSurfer)",
+          "sequence": 53
+        },
+        {
+          "agent": "Orchestrator",
+          "recipient": null,
+          "role": "Orchestrator (thought)",
+          "sequence": 54
+        },
+        {
+          "agent": "WebSurfer",
+          "recipient": null,
+          "role": "WebSurfer",
+          "sequence": 55
+        },
+        {
+          "agent": "Orchestrator",
+          "recipient": null,
+          "role": "Orchestrator (thought)",
+          "sequence": 56
+        },
+        {
+          "agent": "Orchestrator",
+          "recipient": "WebSurfer",
+          "role": "Orchestrator (-> WebSurfer)",
+          "sequence": 57
+        },
+        {
+          "agent": "Orchestrator",
+          "recipient": null,
+          "role": "Orchestrator (thought)",
+          "sequence": 58
+        },
+        {
+          "agent": "WebSurfer",
+          "recipient": null,
+          "role": "WebSurfer",
+          "sequence": 59
+        },
+        {
+          "agent": "Orchestrator",
+          "recipient": null,
+          "role": "Orchestrator (thought)",
+          "sequence": 60
+        },
+        {
+          "agent": "Orchestrator",
+          "recipient": "WebSurfer",
+          "role": "Orchestrator (-> WebSurfer)",
+          "sequence": 61
+        },
+        {
+          "agent": "Orchestrator",
+          "recipient": null,
+          "role": "Orchestrator (thought)",
+          "sequence": 62
+        },
+        {
+          "agent": "WebSurfer",
+          "recipient": null,
+          "role": "WebSurfer",
+          "sequence": 63
+        },
+        {
+          "agent": "Orchestrator",
+          "recipient": null,
+          "role": "Orchestrator (thought)",
+          "sequence": 64
+        },
+        {
+          "agent": "Orchestrator",
+          "recipient": "WebSurfer",
+          "role": "Orchestrator (-> WebSurfer)",
+          "sequence": 65
+        },
+        {
+          "agent": "Orchestrator",
+          "recipient": null,
+          "role": "Orchestrator (thought)",
+          "sequence": 66
+        },
+        {
+          "agent": "WebSurfer",
+          "recipient": null,
+          "role": "WebSurfer",
+          "sequence": 67
+        },
+        {
+          "agent": "Orchestrator",
+          "recipient": null,
+          "role": "Orchestrator (thought)",
+          "sequence": 68
+        },
+        {
+          "agent": "Orchestrator",
+          "recipient": "Assistant",
+          "role": "Orchestrator (-> Assistant)",
+          "sequence": 69
+        },
+        {
+          "agent": "Orchestrator",
+          "recipient": null,
+          "role": "Orchestrator (thought)",
+          "sequence": 70
+        },
+        {
+          "agent": "Assistant",
+          "recipient": null,
+          "role": "Assistant",
+          "sequence": 71
+        },
+        {
+          "agent": "Orchestrator",
+          "recipient": null,
+          "role": "Orchestrator (thought)",
+          "sequence": 72
+        },
+        {
+          "agent": "Orchestrator",
+          "recipient": "WebSurfer",
+          "role": "Orchestrator (-> WebSurfer)",
+          "sequence": 73
+        },
+        {
+          "agent": "Orchestrator",
+          "recipient": null,
+          "role": "Orchestrator (thought)",
+          "sequence": 74
+        },
+        {
+          "agent": "WebSurfer",
+          "recipient": null,
+          "role": "WebSurfer",
+          "sequence": 75
+        },
+        {
+          "agent": "Orchestrator",
+          "recipient": null,
+          "role": "Orchestrator (thought)",
+          "sequence": 76
+        },
+        {
+          "agent": "Orchestrator",
+          "recipient": "Assistant",
+          "role": "Orchestrator (-> Assistant)",
+          "sequence": 77
+        },
+        {
+          "agent": "Orchestrator",
+          "recipient": null,
+          "role": "Orchestrator (thought)",
+          "sequence": 78
+        },
+        {
+          "agent": "Assistant",
+          "recipient": null,
+          "role": "Assistant",
+          "sequence": 79
+        },
+        {
+          "agent": "Orchestrator",
+          "recipient": null,
+          "role": "Orchestrator (thought)",
+          "sequence": 80
+        },
+        {
+          "agent": "Orchestrator",
+          "recipient": "WebSurfer",
+          "role": "Orchestrator (-> WebSurfer)",
+          "sequence": 81
+        },
+        {
+          "agent": "Orchestrator",
+          "recipient": null,
+          "role": "Orchestrator (thought)",
+          "sequence": 82
+        },
+        {
+          "agent": "WebSurfer",
+          "recipient": null,
+          "role": "WebSurfer",
+          "sequence": 83
+        },
+        {
+          "agent": "Orchestrator",
+          "recipient": null,
+          "role": "Orchestrator (thought)",
+          "sequence": 84
+        },
+        {
+          "agent": "Orchestrator",
+          "recipient": "WebSurfer",
+          "role": "Orchestrator (-> WebSurfer)",
+          "sequence": 85
+        },
+        {
+          "agent": "Orchestrator",
+          "recipient": null,
+          "role": "Orchestrator (thought)",
+          "sequence": 86
+        },
+        {
+          "agent": "WebSurfer",
+          "recipient": null,
+          "role": "WebSurfer",
+          "sequence": 87
+        },
+        {
+          "agent": "Orchestrator",
+          "recipient": null,
+          "role": "Orchestrator (thought)",
+          "sequence": 88
+        },
+        {
+          "agent": "Orchestrator",
+          "recipient": "WebSurfer",
+          "role": "Orchestrator (-> WebSurfer)",
+          "sequence": 89
+        },
+        {
+          "agent": "Orchestrator",
+          "recipient": null,
+          "role": "Orchestrator (thought)",
+          "sequence": 90
+        },
+        {
+          "agent": "WebSurfer",
+          "recipient": null,
+          "role": "WebSurfer",
+          "sequence": 91
+        },
+        {
+          "agent": "Orchestrator",
+          "recipient": null,
+          "role": "Orchestrator (thought)",
+          "sequence": 92
+        },
+        {
+          "agent": "Orchestrator",
+          "recipient": null,
+          "role": "Orchestrator (thought)",
+          "sequence": 93
+        },
+        {
+          "agent": "Orchestrator",
+          "recipient": null,
+          "role": "Orchestrator (thought)",
+          "sequence": 94
+        },
+        {
+          "agent": "Orchestrator",
+          "recipient": null,
+          "role": "Orchestrator (thought)",
+          "sequence": 95
+        },
+        {
+          "agent": "Orchestrator",
+          "recipient": "WebSurfer",
+          "role": "Orchestrator (-> WebSurfer)",
+          "sequence": 96
+        },
+        {
+          "agent": "Orchestrator",
+          "recipient": null,
+          "role": "Orchestrator (thought)",
+          "sequence": 97
+        },
+        {
+          "agent": "WebSurfer",
+          "recipient": null,
+          "role": "WebSurfer",
+          "sequence": 98
+        },
+        {
+          "agent": "Orchestrator",
+          "recipient": null,
+          "role": "Orchestrator (thought)",
+          "sequence": 99
+        },
+        {
+          "agent": "Orchestrator",
+          "recipient": "WebSurfer",
+          "role": "Orchestrator (-> WebSurfer)",
+          "sequence": 100
+        },
+        {
+          "agent": "Orchestrator",
+          "recipient": null,
+          "role": "Orchestrator (thought)",
+          "sequence": 101
+        },
+        {
+          "agent": "WebSurfer",
+          "recipient": null,
+          "role": "WebSurfer",
+          "sequence": 102
+        },
+        {
+          "agent": "Orchestrator",
+          "recipient": null,
+          "role": "Orchestrator (thought)",
+          "sequence": 103
+        },
+        {
+          "agent": "Orchestrator",
+          "recipient": "WebSurfer",
+          "role": "Orchestrator (-> WebSurfer)",
+          "sequence": 104
+        },
+        {
+          "agent": "Orchestrator",
+          "recipient": null,
+          "role": "Orchestrator (thought)",
+          "sequence": 105
+        },
+        {
+          "agent": "WebSurfer",
+          "recipient": null,
+          "role": "WebSurfer",
+          "sequence": 106
+        },
+        {
+          "agent": "Orchestrator",
+          "recipient": null,
+          "role": "Orchestrator (thought)",
+          "sequence": 107
+        },
+        {
+          "agent": "Orchestrator",
+          "recipient": "WebSurfer",
+          "role": "Orchestrator (-> WebSurfer)",
+          "sequence": 108
+        },
+        {
+          "agent": "Orchestrator",
+          "recipient": null,
+          "role": "Orchestrator (thought)",
+          "sequence": 109
+        },
+        {
+          "agent": "WebSurfer",
+          "recipient": null,
+          "role": "WebSurfer",
+          "sequence": 110
+        },
+        {
+          "agent": "Orchestrator",
+          "recipient": null,
+          "role": "Orchestrator (thought)",
+          "sequence": 111
+        },
+        {
+          "agent": "Orchestrator",
+          "recipient": "WebSurfer",
+          "role": "Orchestrator (-> WebSurfer)",
+          "sequence": 112
+        },
+        {
+          "agent": "Orchestrator",
+          "recipient": null,
+          "role": "Orchestrator (thought)",
+          "sequence": 113
+        },
+        {
+          "agent": "Orchestrator",
+          "recipient": null,
+          "role": "Orchestrator (thought)",
+          "sequence": 114
+        },
+        {
+          "agent": "Orchestrator",
+          "recipient": "Assistant",
+          "role": "Orchestrator (-> Assistant)",
+          "sequence": 115
+        },
+        {
+          "agent": "Orchestrator",
+          "recipient": null,
+          "role": "Orchestrator (thought)",
+          "sequence": 116
+        },
+        {
+          "agent": "Assistant",
+          "recipient": null,
+          "role": "Assistant",
+          "sequence": 117
+        },
+        {
+          "agent": "Orchestrator",
+          "recipient": null,
+          "role": "Orchestrator (thought)",
+          "sequence": 118
+        },
+        {
+          "agent": "Orchestrator",
+          "recipient": "Assistant",
+          "role": "Orchestrator (-> Assistant)",
+          "sequence": 119
+        },
+        {
+          "agent": "Orchestrator",
+          "recipient": null,
+          "role": "Orchestrator (thought)",
+          "sequence": 120
+        },
+        {
+          "agent": "Assistant",
+          "recipient": null,
+          "role": "Assistant",
+          "sequence": 121
+        },
+        {
+          "agent": "Orchestrator",
+          "recipient": null,
+          "role": "Orchestrator (thought)",
+          "sequence": 122
+        },
+        {
+          "agent": "Orchestrator",
+          "recipient": null,
+          "role": "Orchestrator (thought)",
+          "sequence": 123
+        },
+        {
+          "agent": "Orchestrator",
+          "recipient": null,
+          "role": "Orchestrator (thought)",
+          "sequence": 124
+        },
+        {
+          "agent": "Orchestrator",
+          "recipient": null,
+          "role": "Orchestrator (thought)",
+          "sequence": 125
+        },
+        {
+          "agent": "Orchestrator",
+          "recipient": "WebSurfer",
+          "role": "Orchestrator (-> WebSurfer)",
+          "sequence": 126
+        },
+        {
+          "agent": "Orchestrator",
+          "recipient": null,
+          "role": "Orchestrator (thought)",
+          "sequence": 127
+        },
+        {
+          "agent": "WebSurfer",
+          "recipient": null,
+          "role": "WebSurfer",
+          "sequence": 128
+        },
+        {
+          "agent": "Orchestrator",
+          "recipient": null,
+          "role": "Orchestrator (termination condition)",
+          "sequence": 129
+        }
+      ],
+      "subset": "Hand-Crafted"
+    },
+    {
+      "analysis_context_digest": "0ef0c4cc7a954a0a0fac5d9533eb553c56fd367941ea9c115c134d8996c5ef34",
+      "canonical_step_count": 10,
+      "canonical_trace_digest": "e6a6f69a2539eff85ffdc7e30a25420b44bd5abdf3f1bd184a39c685d347e4d7",
+      "context": {
+        "budget": 65536,
+        "effective_budget": 61440,
+        "estimated_original_size": 14167,
+        "estimated_selected_size": 14167,
+        "full_trace_used": true,
+        "omitted_ranges": [],
+        "original_step_count": 10,
+        "pruning_occurred": false,
+        "reserved_headroom": 4096,
+        "selected_step_count": 10,
+        "size_unit": "utf8_bytes",
+        "truncated_sequences": [],
+        "visible_sequences": [
+          0,
+          1,
+          2,
+          3,
+          4,
+          5,
+          6,
+          7,
+          8,
+          9
+        ]
+      },
+      "failure": null,
+      "ground_truth": {
+        "annotation_anomaly": [],
+        "eligible_agent_scoring": true,
+        "eligible_step_scoring": true,
+        "missing_fields": [],
+        "nullable_fields": [],
+        "raw": {
+          "ground_truth": "3",
+          "groundtruth": null,
+          "is_correct": false,
+          "is_corrected": null,
+          "mistake_agent": "InformationVerification_Expert",
+          "mistake_reason": "The agent wrote incorrect code twice, exhausting the interaction limits.",
+          "mistake_step": "6",
+          "mistake_type": null,
+          "question_ID": "8e867cd7-cff9-4e6c-867a-ff5ddc2550be"
+        },
+        "scoring_agent": "InformationVerification_Expert",
+        "scoring_sequence": 6
+      },
+      "original_canonical_content_equal": true,
+      "original_history_digest": "86cb13924ad327169c708d7c8cd15bc33b400ea97dc20a65a13cb8b65e55ca50",
+      "persisted_context_reconstructed_exactly": true,
+      "prediction": {
+        "abstention_reason": null,
+        "confidence": "high",
+        "decision": "attributed",
+        "decisive_sequence": 5,
+        "evidence": [
+          {
+            "end_sequence": 5,
+            "reason": "DataAnalysis_Expert requested scraping the Discography table, but the tool returned an empty list, yielding no usable album records.",
+            "start_sequence": 4
+          },
+          {
+            "end_sequence": 7,
+            "reason": "The subsequent agent attempted a fallback because extraction had failed, but its lookup produced a None value and crashed; this is a later symptom rather than the originating failure.",
+            "start_sequence": 6
+          }
+        ],
+        "explanation": "The requested Wikipedia table scrape returned an empty result at sequence 5, so no album data was extracted and the task could not be answered. The later parsing error was a downstream symptom of this unresolved extraction failure.",
+        "failure_category": "Discography data extraction failure",
+        "responsible_agent": "DataAnalysis_Expert"
+      },
+      "primary_classification": "benchmark_semantic_disagreement",
+      "rationale": "Prediction selects empty extraction result at terminal step 5 caused by DataAnalysis action 4. Benchmark selects InformationVerification recovery code 6. Both extraction and recovery visibly fail. Prediction identifies an earlier plausible cause but locates the observed result rather than its producing action.",
+      "sample_id": "Algorithm-Generated/568fafbf10abb4b81e5e9fab311493cf8a4787dac5b5373d668a56195ab99be3/0",
+      "secondary_classifications": [
+        "wrong_agent",
+        "evidence_step_selected"
+      ],
+      "step_speakers_and_recipients": [
+        {
+          "agent": "Latin_American_Music_Expert",
+          "recipient": null,
+          "role": "assistant",
+          "sequence": 0
+        },
+        {
+          "agent": "DataAnalysis_Expert",
+          "recipient": null,
+          "role": "user",
+          "sequence": 1
+        },
+        {
+          "agent": "InformationVerification_Expert",
+          "recipient": null,
+          "role": "user",
+          "sequence": 2
+        },
+        {
+          "agent": "Computer_terminal",
+          "recipient": null,
+          "role": "user",
+          "sequence": 3
+        },
+        {
+          "agent": "DataAnalysis_Expert",
+          "recipient": null,
+          "role": "user",
+          "sequence": 4
+        },
+        {
+          "agent": "Computer_terminal",
+          "recipient": null,
+          "role": "user",
+          "sequence": 5
+        },
+        {
+          "agent": "InformationVerification_Expert",
+          "recipient": null,
+          "role": "user",
+          "sequence": 6
+        },
+        {
+          "agent": "Computer_terminal",
+          "recipient": null,
+          "role": "user",
+          "sequence": 7
+        },
+        {
+          "agent": "InformationVerification_Expert",
+          "recipient": null,
+          "role": "user",
+          "sequence": 8
+        },
+        {
+          "agent": "Computer_terminal",
+          "recipient": null,
+          "role": "user",
+          "sequence": 9
+        }
+      ],
+      "subset": "Algorithm-Generated"
+    },
+    {
+      "analysis_context_digest": "b32247d6939d647df192dc0d9e0690df435062d783f10be3d78877e19c404d1e",
+      "canonical_step_count": 7,
+      "canonical_trace_digest": "c85a3e89b7946ff0c7388780d4f45eff1cfe834fac79a6927e001672e8119345",
+      "context": {
+        "budget": 65536,
+        "effective_budget": 61440,
+        "estimated_original_size": 14498,
+        "estimated_selected_size": 14498,
+        "full_trace_used": true,
+        "omitted_ranges": [],
+        "original_step_count": 7,
+        "pruning_occurred": false,
+        "reserved_headroom": 4096,
+        "selected_step_count": 7,
+        "size_unit": "utf8_bytes",
+        "truncated_sequences": [],
+        "visible_sequences": [
+          0,
+          1,
+          2,
+          3,
+          4,
+          5,
+          6
+        ]
+      },
+      "failure": null,
+      "ground_truth": {
+        "annotation_anomaly": [],
+        "eligible_agent_scoring": true,
+        "eligible_step_scoring": true,
+        "missing_fields": [],
+        "nullable_fields": [],
+        "raw": {
+          "ground_truth": "1148 sqft",
+          "groundtruth": null,
+          "is_correct": false,
+          "is_corrected": null,
+          "mistake_agent": "Verification_Expert",
+          "mistake_reason": "The code provided by the Verification_Expert is unreasonable.",
+          "mistake_step": "1",
+          "mistake_type": null,
+          "question_ID": "6b06d186921b8b390c65aebd0d16f09f60a47d2f1288ebe36953f734e84c0a3c"
+        },
+        "scoring_agent": "Verification_Expert",
+        "scoring_sequence": 1
+      },
+      "original_canonical_content_equal": true,
+      "original_history_digest": "8f808803774e4319ae5e8afb0e2968b61200ebd8b501cdb3b741440ece7dc27f",
+      "persisted_context_reconstructed_exactly": true,
+      "prediction": {
+        "abstention_reason": null,
+        "confidence": "high",
+        "decision": "attributed",
+        "decisive_sequence": 3,
+        "evidence": [
+          {
+            "end_sequence": 2,
+            "reason": "The attempted verification failed because the required dataset file was missing.",
+            "start_sequence": 2
+          },
+          {
+            "end_sequence": 3,
+            "reason": "Verification_Expert explicitly replaced the missing source with a synthetic dataset, which cannot establish the requested Zillow result.",
+            "start_sequence": 3
+          },
+          {
+            "end_sequence": 5,
+            "reason": "The agent incorrectly concluded that the synthetic dataset was representative and reported its 900-square-foot row as the verified answer.",
+            "start_sequence": 5
+          }
+        ],
+        "explanation": "After the real dataset was unavailable, Verification_Expert chose to generate a synthetic dataset and proceeded as though it could verify the Zillow result. The later conclusion that the dataset was representative and that 900 square feet was the answer was therefore unsupported by Zillow evidence.",
+        "failure_category": "Unsupported synthetic data substituted for required Zillow data",
+        "responsible_agent": "Verification_Expert"
+      },
+      "primary_classification": "correct_agent_wrong_step",
+      "rationale": "Same agent: prediction chooses synthetic dataset creation 3 after assumed missing-file input 1 (benchmark). Synthetic substitution is a concrete unsupported action. Its explanation also misattributes a later RealEstateMarket summary to the verification agent; no scoring adjustment is made.",
+      "sample_id": "Algorithm-Generated/5e0abb29aec143a3f2f65fcce99d679de92f536108d654977379816ecf345507/0",
+      "secondary_classifications": [
+        "downstream_symptom_selected",
+        "benchmark_semantic_disagreement"
+      ],
+      "step_speakers_and_recipients": [
+        {
+          "agent": "DataAnalysis_Expert",
+          "recipient": null,
+          "role": "assistant",
+          "sequence": 0
+        },
+        {
+          "agent": "Verification_Expert",
+          "recipient": null,
+          "role": "user",
+          "sequence": 1
+        },
+        {
+          "agent": "Computer_terminal",
+          "recipient": null,
+          "role": "user",
+          "sequence": 2
+        },
+        {
+          "agent": "Verification_Expert",
+          "recipient": null,
+          "role": "user",
+          "sequence": 3
+        },
+        {
+          "agent": "Computer_terminal",
+          "recipient": null,
+          "role": "user",
+          "sequence": 4
+        },
+        {
+          "agent": "RealEstateMarket_Expert",
+          "recipient": null,
+          "role": "user",
+          "sequence": 5
+        },
+        {
+          "agent": "DataAnalysis_Expert",
+          "recipient": null,
+          "role": "assistant",
+          "sequence": 6
+        }
+      ],
+      "subset": "Algorithm-Generated"
+    },
+    {
+      "analysis_context_digest": "ed7835648259967790f644779550787dbd8af3538b6d3b8c490d5729cfd780a2",
+      "canonical_step_count": 10,
+      "canonical_trace_digest": "71c22deb51c819347e2cc46cea371e5f36a272aced864cd24172817c532cd643",
+      "context": {
+        "budget": 65536,
+        "effective_budget": 61440,
+        "estimated_original_size": 14382,
+        "estimated_selected_size": 14382,
+        "full_trace_used": true,
+        "omitted_ranges": [],
+        "original_step_count": 10,
+        "pruning_occurred": false,
+        "reserved_headroom": 4096,
+        "selected_step_count": 10,
+        "size_unit": "utf8_bytes",
+        "truncated_sequences": [],
+        "visible_sequences": [
+          0,
+          1,
+          2,
+          3,
+          4,
+          5,
+          6,
+          7,
+          8,
+          9
+        ]
+      },
+      "failure": null,
+      "ground_truth": {
+        "annotation_anomaly": [],
+        "eligible_agent_scoring": true,
+        "eligible_step_scoring": true,
+        "missing_fields": [],
+        "nullable_fields": [],
+        "raw": {
+          "ground_truth": "4",
+          "groundtruth": null,
+          "is_correct": false,
+          "is_corrected": null,
+          "mistake_agent": "InformationExtraction_Expert",
+          "mistake_reason": "While obtaining the web link, the expert should download the PDF file and extract the corresponding text. They should not rely on web search to locate specific content within the book.",
+          "mistake_step": "8",
+          "mistake_type": null,
+          "question_ID": "114d5fd0-e2ae-4b6d-a65a-870da2d19c08"
+        },
+        "scoring_agent": "InformationExtraction_Expert",
+        "scoring_sequence": 8
+      },
+      "original_canonical_content_equal": true,
+      "original_history_digest": "5c034aeb9d87f636b761faf2f30ca480a1b7cae3c53ace54f247a12ec2754b5f",
+      "persisted_context_reconstructed_exactly": true,
+      "prediction": {
+        "abstention_reason": null,
+        "confidence": "high",
+        "decision": "attributed",
+        "decisive_sequence": 5,
+        "evidence": [
+          {
+            "end_sequence": 5,
+            "reason": "The agent instructed extraction from 'responsibility_of_intellectuals.pdf', and the resulting tool execution failed with FileNotFoundError because the file was unavailable.",
+            "start_sequence": 4
+          }
+        ],
+        "explanation": "The InformationExtraction_Expert attempted PDF extraction using an assumed local file path without ensuring the PDF had been downloaded; the terminal then failed because the file did not exist, and the task was never completed.",
+        "failure_category": "missing required input file",
+        "responsible_agent": "InformationExtraction_Expert"
+      },
+      "primary_classification": "correct_agent_wrong_step",
+      "rationale": "Prediction chooses terminal FileNotFoundError at 5 and names the author of extraction code 4. Benchmark chooses a later search strategy at 8. Earlier failure is supported, but the chosen step is the tool result, not the authored extraction action.",
+      "sample_id": "Algorithm-Generated/5a1a837b70b790ddf4ec1acc53165fc32d1f1bc9a145ec4cf95f7919ff697c58/0",
+      "secondary_classifications": [
+        "evidence_step_selected",
+        "benchmark_semantic_disagreement"
+      ],
+      "step_speakers_and_recipients": [
+        {
+          "agent": "DOI_Expert",
+          "recipient": null,
+          "role": "assistant",
+          "sequence": 0
+        },
+        {
+          "agent": "InformationExtraction_Expert",
+          "recipient": null,
+          "role": "user",
+          "sequence": 1
+        },
+        {
+          "agent": "Computer_terminal",
+          "recipient": null,
+          "role": "user",
+          "sequence": 2
+        },
+        {
+          "agent": "DOI_Expert",
+          "recipient": null,
+          "role": "assistant",
+          "sequence": 3
+        },
+        {
+          "agent": "InformationExtraction_Expert",
+          "recipient": null,
+          "role": "user",
+          "sequence": 4
+        },
+        {
+          "agent": "Computer_terminal",
+          "recipient": null,
+          "role": "user",
+          "sequence": 5
+        },
+        {
+          "agent": "DOI_Expert",
+          "recipient": null,
+          "role": "assistant",
+          "sequence": 6
+        },
+        {
+          "agent": "InformationExtraction_Expert",
+          "recipient": null,
+          "role": "user",
+          "sequence": 7
+        },
+        {
+          "agent": "InformationExtraction_Expert",
+          "recipient": null,
+          "role": "user",
+          "sequence": 8
+        },
+        {
+          "agent": "InformationExtraction_Expert",
+          "recipient": null,
+          "role": "user",
+          "sequence": 9
+        }
+      ],
+      "subset": "Algorithm-Generated"
+    },
+    {
+      "analysis_context_digest": "4a5275e88c52045a4b18ab18d4008b8d69a097bb7b902e6cf3b70a925882c7a1",
+      "canonical_step_count": 10,
+      "canonical_trace_digest": "ddb536343427c631e3367987752e48a1e7a5e6fd75ebe040e3e493197987c426",
+      "context": {
+        "budget": 65536,
+        "effective_budget": 61440,
+        "estimated_original_size": 16226,
+        "estimated_selected_size": 16226,
+        "full_trace_used": true,
+        "omitted_ranges": [],
+        "original_step_count": 10,
+        "pruning_occurred": false,
+        "reserved_headroom": 4096,
+        "selected_step_count": 10,
+        "size_unit": "utf8_bytes",
+        "truncated_sequences": [],
+        "visible_sequences": [
+          0,
+          1,
+          2,
+          3,
+          4,
+          5,
+          6,
+          7,
+          8,
+          9
+        ]
+      },
+      "failure": null,
+      "ground_truth": {
+        "annotation_anomaly": [],
+        "eligible_agent_scoring": true,
+        "eligible_step_scoring": true,
+        "missing_fields": [],
+        "nullable_fields": [],
+        "raw": {
+          "ground_truth": "shrimp",
+          "groundtruth": null,
+          "is_correct": false,
+          "is_corrected": null,
+          "mistake_agent": "WaybackMachine_Expert",
+          "mistake_reason": "The code provided by WaybackMachine_Expert is not reasonable.",
+          "mistake_step": "1",
+          "mistake_type": null,
+          "question_ID": "e8cb5b03-41e0-4086-99e5-f6806cd97211"
+        },
+        "scoring_agent": "WaybackMachine_Expert",
+        "scoring_sequence": 1
+      },
+      "original_canonical_content_equal": true,
+      "original_history_digest": "15c88ba85d0ec0fff0ee5f44ab0c686d342d4a45d74171a773f30f00bc84761e",
+      "persisted_context_reconstructed_exactly": true,
+      "prediction": {
+        "abstention_reason": null,
+        "confidence": "high",
+        "decision": "attributed",
+        "decisive_sequence": 6,
+        "evidence": [
+          {
+            "end_sequence": 4,
+            "reason": "The attempted retrieval failed with a connection timeout, and the March output contained Wayback interface text rather than menu items.",
+            "start_sequence": 4
+          },
+          {
+            "end_sequence": 6,
+            "reason": "WaybackMachine_Expert asserted complete March and April menus and a comparison, but no visible snapshot contents or other evidence supports those lists.",
+            "start_sequence": 6
+          }
+        ],
+        "explanation": "The required menu retrieval failed, but WaybackMachine_Expert subsequently claimed to have manually retrieved both menus and supplied a comparison without visible supporting evidence. The final answer therefore rests on an unsupported assertion.",
+        "failure_category": "unsupported conclusion",
+        "responsible_agent": "WaybackMachine_Expert"
+      },
+      "primary_classification": "benchmark_semantic_disagreement",
+      "rationale": "Benchmark labels retrieval-plan step 1, whose code blocks contain comments. Prediction selects unsupported claim of manually retrieved menus at 6 after failed retrieval at 4. This is a defensible evidence-grounded alternative event, not proof that the benchmark is wrong.",
+      "sample_id": "Algorithm-Generated/832f164cdecd3d4783bb7e90b891bef163e5ce9d61b2c24012684164a82c6a8e/0",
+      "secondary_classifications": [
+        "correct_agent_wrong_step",
+        "downstream_symptom_selected"
+      ],
+      "step_speakers_and_recipients": [
+        {
+          "agent": "WaybackMachine_Expert",
+          "recipient": null,
+          "role": "assistant",
+          "sequence": 0
+        },
+        {
+          "agent": "WaybackMachine_Expert",
+          "recipient": null,
+          "role": "assistant",
+          "sequence": 1
+        },
+        {
+          "agent": "Computer_terminal",
+          "recipient": null,
+          "role": "user",
+          "sequence": 2
+        },
+        {
+          "agent": "MenuAnalysis_Expert",
+          "recipient": null,
+          "role": "user",
+          "sequence": 3
+        },
+        {
+          "agent": "Computer_terminal",
+          "recipient": null,
+          "role": "user",
+          "sequence": 4
+        },
+        {
+          "agent": "WaybackMachine_Expert",
+          "recipient": null,
+          "role": "assistant",
+          "sequence": 5
+        },
+        {
+          "agent": "WaybackMachine_Expert",
+          "recipient": null,
+          "role": "assistant",
+          "sequence": 6
+        },
+        {
+          "agent": "Verification_Expert",
+          "recipient": null,
+          "role": "user",
+          "sequence": 7
+        },
+        {
+          "agent": "Verification_Expert",
+          "recipient": null,
+          "role": "user",
+          "sequence": 8
+        },
+        {
+          "agent": "Verification_Expert",
+          "recipient": null,
+          "role": "user",
+          "sequence": 9
+        }
+      ],
+      "subset": "Algorithm-Generated"
+    },
+    {
+      "analysis_context_digest": "e73316f423654aebb64e933cb586421849aabcb5863223c609436ffd1d9c7942",
+      "canonical_step_count": 10,
+      "canonical_trace_digest": "eaa99b4e1e3ee2dd9fc732befb69ee31a4733416e4ad7ff4176ab2b741444b7d",
+      "context": {
+        "budget": 65536,
+        "effective_budget": 61440,
+        "estimated_original_size": 24316,
+        "estimated_selected_size": 24316,
+        "full_trace_used": true,
+        "omitted_ranges": [],
+        "original_step_count": 10,
+        "pruning_occurred": false,
+        "reserved_headroom": 4096,
+        "selected_step_count": 10,
+        "size_unit": "utf8_bytes",
+        "truncated_sequences": [],
+        "visible_sequences": [
+          0,
+          1,
+          2,
+          3,
+          4,
+          5,
+          6,
+          7,
+          8,
+          9
+        ]
+      },
+      "failure": null,
+      "ground_truth": {
+        "annotation_anomaly": [],
+        "eligible_agent_scoring": true,
+        "eligible_step_scoring": true,
+        "missing_fields": [],
+        "nullable_fields": [],
+        "raw": {
+          "ground_truth": "egalitarian",
+          "groundtruth": null,
+          "is_correct": false,
+          "is_corrected": null,
+          "mistake_agent": "ModelEvaluation_Interpretation_Expert",
+          "mistake_reason": "The agent begins using placeholder values in the code, which results in failure.",
+          "mistake_step": "4",
+          "mistake_type": null,
+          "question_ID": "c61d22de-5f6c-4958-a7f6-5e9707bd3466"
+        },
+        "scoring_agent": "ModelEvaluation_Interpretation_Expert",
+        "scoring_sequence": 4
+      },
+      "original_canonical_content_equal": true,
+      "original_history_digest": "c71cd54b808d9c022eb99b1187c910d55e9222a9289547b94ac0fb0c930848a8",
+      "persisted_context_reconstructed_exactly": true,
+      "prediction": {
+        "abstention_reason": null,
+        "confidence": "high",
+        "decision": "attributed",
+        "decisive_sequence": 2,
+        "evidence": [
+          {
+            "end_sequence": 1,
+            "reason": "Physics_Expert defined the search and filtering approach that failed to produce the required June 2022 paper.",
+            "start_sequence": 1
+          },
+          {
+            "end_sequence": 2,
+            "reason": "The execution visibly failed with `NameError: name 'june_2022_paper' is not defined`, which is the decisive interruption.",
+            "start_sequence": 2
+          }
+        ],
+        "explanation": "Physics_Expert's search plan did not identify a June 2022 paper, leaving `june_2022_paper` undefined; the resulting NameError stopped the execution before either paper could be analyzed. The later placeholder-ID error was a downstream symptom.",
+        "failure_category": "Failed paper identification/search",
+        "responsible_agent": "Physics_Expert"
+      },
+      "primary_classification": "benchmark_semantic_disagreement",
+      "rationale": "Physics search action 1 leads to terminal NameError at 2; later ModelEvaluation placeholder-ID action 4 also fails. Prediction explicitly favors the earlier failure but chooses its terminal result. Benchmark favors the later distinct failure. No sample is relabeled.",
+      "sample_id": "Algorithm-Generated/917ea0918e7921c4fd1c06c84364361cb7cce7a9e90bdf323f30fdcc23f1dcd6/0",
+      "secondary_classifications": [
+        "wrong_agent",
+        "evidence_step_selected"
+      ],
+      "step_speakers_and_recipients": [
+        {
+          "agent": "ModelEvaluation_Interpretation_Expert",
+          "recipient": null,
+          "role": "assistant",
+          "sequence": 0
+        },
+        {
+          "agent": "Physics_Expert",
+          "recipient": null,
+          "role": "user",
+          "sequence": 1
+        },
+        {
+          "agent": "Computer_terminal",
+          "recipient": null,
+          "role": "user",
+          "sequence": 2
+        },
+        {
+          "agent": "Verification_Expert",
+          "recipient": null,
+          "role": "user",
+          "sequence": 3
+        },
+        {
+          "agent": "ModelEvaluation_Interpretation_Expert",
+          "recipient": null,
+          "role": "assistant",
+          "sequence": 4
+        },
+        {
+          "agent": "Computer_terminal",
+          "recipient": null,
+          "role": "user",
+          "sequence": 5
+        },
+        {
+          "agent": "ModelEvaluation_Interpretation_Expert",
+          "recipient": null,
+          "role": "assistant",
+          "sequence": 6
+        },
+        {
+          "agent": "Physics_Expert",
+          "recipient": null,
+          "role": "user",
+          "sequence": 7
+        },
+        {
+          "agent": "Physics_Expert",
+          "recipient": null,
+          "role": "user",
+          "sequence": 8
+        },
+        {
+          "agent": "Computer_terminal",
+          "recipient": null,
+          "role": "user",
+          "sequence": 9
+        }
+      ],
+      "subset": "Algorithm-Generated"
+    }
+  ],
+  "secondary_counts": {
+    "benchmark_semantic_disagreement": 2,
+    "correct_agent_wrong_step": 1,
+    "downstream_symptom_selected": 5,
+    "evidence_step_selected": 3,
+    "wrong_agent": 2
+  },
+  "timestamp": "2026-10-17T15:20:35.466792+00:00",
+  "version": "attribution-development-review-v1"
+}

@@ -1,0 +1,54 @@
+{
+  "date": "2026-10-17",
+  "offline_suite": {
+    "command": "uv run --group evaluation pytest -m 'not live_llm' -q",
+    "passed": 618,
+    "skipped": 121,
+    "paid_tests_deselected": 2,
+    "warnings": "Existing Starlette/AnyIO deprecation warning"
+  },
+  "evaluation_unit_tests": {"passed": 64, "openai_calls": 0},
+  "ruff_lint": "passed across repository",
+  "formatting_added_evaluation_python": "passed, 22 files",
+  "repository_formatting": {
+    "status": "four pre-existing differences in untouched files",
+    "files": [
+      "app/api/health.py",
+      "app/core/config.py",
+      "app/services/attribution_input.py",
+      "docs/pytest-compiler-v1.md"
+    ]
+  },
+  "mypy": {"status": "passed", "scope": "existing app target", "source_files": 96},
+  "git_diff_check": "passed",
+  "context_audit": {
+    "records_processed": 184,
+    "adapter_or_context_failures": 0,
+    "report": "evaluation-context-v2.json",
+    "run_id_policy": "uuid5-canonical-evidence-v1"
+  },
+  "frozen_manifest": {
+    "status": "validated against all local records; unchanged by production-envelope correction",
+    "path": "research/manifests/who_when-v1.json",
+    "development_records": 35,
+    "development_sample": 16,
+    "final_records": 149
+  },
+  "runner_dry_runs": {"attribution": "passed", "regressions": "passed"},
+  "real_docker_suite": {
+    "attempted_cases": 6,
+    "preflight_failures": 6,
+    "generated_executions_completed": 0,
+    "valid_verdicts_claimed": 0,
+    "status": "unverified; daemon infrastructure unavailable",
+    "diagnostic": "Both existing Docker contexts returned HTTP 500 for daemon info/version; resource-limit preflight failed",
+    "remaining": "Build evaluation overlay and rerun six opt-in cases on a healthy Linux daemon"
+  },
+  "paid_development_calls": 0,
+  "final_benchmark_calls": 0,
+  "model_performance_results": "not measured",
+  "production_app_changes": 0,
+  "migration_changes": 0,
+  "dependency_added": "Optional evaluation group: pyarrow 23.0.1",
+  "frontend_changes": 0
+}

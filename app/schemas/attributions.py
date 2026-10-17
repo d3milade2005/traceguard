@@ -5,6 +5,7 @@ from uuid import UUID
 from pydantic import BaseModel, ConfigDict, Field, JsonValue, field_validator, model_validator
 
 from app.core.attribution_status import AttributionStatus
+from app.schemas.llm_diagnostics import OutputDiagnostics
 
 ReasoningEffort = Literal["none", "minimal", "low", "medium", "high", "xhigh"]
 Confidence = Literal["low", "medium", "high"]
@@ -135,6 +136,7 @@ class AttributionRecord(AttributionAccepted):
     latency_ms: int | None
     input_sha256: str | None
     context_manifest: dict[str, JsonValue] | None
+    output_diagnostics: OutputDiagnostics | None = None
     failure_code: str | None
     failed_at: datetime | None
     completed_at: datetime | None

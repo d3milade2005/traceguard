@@ -15,6 +15,7 @@ from app.core.exceptions import (
     CompilationError,
     QueuePublishError,
     RegressionQueuePublishError,
+    ReplayContractError,
     RunNotFoundError,
     RunNotNormalizedError,
     ValidationQueuePublishError,
@@ -151,7 +152,12 @@ class AnalysisService:
                 self._advance(row, config, now)
             except CompilationError as exc:
                 row.generated_test_id = exc.generated_test_id
-                self._stop(row, "failed", exc.code, now)
+                self._stop(
+                    row,
+                    "review_required" if isinstance(exc, ReplayContractError) else "failed",
+                    exc.code,
+                    now,
+                )
             except ApplicationError as exc:
                 logger.exception("Analysis stage failed")
                 if isinstance(exc, AttributionQueuePublishError):
@@ -209,7 +215,14 @@ class AnalysisService:
             artifact, _ = self.compiler.compile(row.regression_spec_id, row.request_id)
             row.generated_test_id = artifact.id
             if artifact.status == "failed":
-                self._stop(row, "failed", artifact.failure_code or "COMPILATION_FAILED", now)
+                self._stop(
+                    row,
+                    "review_required"
+                    if artifact.failure_code == ReplayContractError.code
+                    else "failed",
+                    artifact.failure_code or "COMPILATION_FAILED",
+                    now,
+                )
             else:
                 row.stage = "validation"
         else:

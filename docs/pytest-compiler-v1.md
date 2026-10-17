@@ -39,8 +39,8 @@ subprocess, filesystem, environment, or installation operations.
 identifier = "traceguard.agent-invocation"
 version = "1"
 
-def invoke(*, target_agent, stimulus, preconditions) -> RegressionObservation:
-    ...
+
+def invoke(*, target_agent, stimulus, preconditions) -> RegressionObservation: ...
 ```
 
 `target_agent` is a literal identity, never a module import. `stimulus` is the server's

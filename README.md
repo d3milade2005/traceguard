@@ -1,15 +1,22 @@
 # Traceguard
 
-The integrated backend analysis workflow and opt-in two-call live demonstration are
-documented in [Analysis pipeline](docs/analysis-pipeline.md). Phase 8 is not started.
+Phase 8 research tooling, the full offline context audit, fixed evaluation split,
+and explicit development/final commands are documented in
+[Evaluation and experiments](docs/phase8-evaluation.md). The two evaluation tracks
+remain separate; paid inference requires `--live` and an explicit call budget.
 
-Backend foundation for post-mortem debugging of failed multi-agent executions.
-The planned pipeline preserves a failed trace, normalizes it, attributes the
+The integrated backend analysis workflow and opt-in two-call live demonstration are
+documented in [Analysis pipeline](docs/analysis-pipeline.md). The development
+experiments are complete; the 149-record final evaluation remains unrun.
+
+Backend for post-mortem debugging of failed multi-agent executions.
+The pipeline preserves a failed trace, normalizes it, attributes the
 failure, constructs a RegressionSpec, compiles PyTest, and validates it in isolation.
 
-**Current scope:** failed-trace submission, exact source-byte persistence, asynchronous
-Who&When normalization, deterministic analysis context management, and explicitly
-requested, structured OpenAI failure attribution. No generated Python is executed.
+**Current scope:** Phases 1–7 and research evaluation, with generated PyTest executed
+only in the restricted Docker validator. GitHub login protects operational APIs.
+The [frontend contract](docs/frontend-contract.md) documents authentication, Runs,
+existing stage endpoints, dashboard, safe runtime information, and local setup.
 
 ## Architecture
 
@@ -37,7 +44,7 @@ app/
     broker.py                AMQP readiness/error translation
     traces/                  Pure Who&When trace adapter
     llm/                     Responses API integration and LLMClient protocol
-    execution/               Future isolated validation boundary
+    execution/               Restricted faulty/corrected Docker validation
   workers/                   Celery configuration and correlation signals
 alembic/versions/             Reviewed, explicit database migrations
 tests/unit/                  No infrastructure or paid API calls
@@ -89,7 +96,7 @@ volumes. Published ports bind to loopback. This Compose configuration is for loc
 development, with URL-safe development credentials; production deployment and
 secret provisioning are separate work.
 
-Stop services with `docker compose down`. Named volumes remain. If port 5432 is
+Stop services with `docker compose down`. Named volumes remain. If port 5433 is
 already occupied, change the PostgreSQL host port in `docker-compose.yml` and the
 matching port in your host `DATABASE_URL` before starting Compose.
 
@@ -110,7 +117,8 @@ uv run celery -A app.workers.celery_app:celery_app worker --loglevel=INFO
 On Windows, use `docker compose up -d worker` for the Linux worker. Celery does not
 officially support [Windows workers](https://docs.celeryq.dev/en/main/faq.html#windows). The host API is supported on Windows.
 
-The worker registers `traceguard.process_run` and `traceguard.attribute_run`.
+The ordinary worker registers normalization, attribution, regression synthesis, and
+analysis coordination tasks. Validation uses its dedicated queue and worker.
 Normalization never triggers attribution automatically. To check its control connection:
 
 ```sh
@@ -124,7 +132,11 @@ docker compose exec worker celery -A app.workers.celery_app:celery_app inspect p
 | `GET /health` | HTTP 200 liveness; does not contact infrastructure |
 | `GET /ready` | HTTP 200 after PostgreSQL query and authenticated RabbitMQ connection; HTTP 503 on dependency failure |
 | `POST /api/v1/runs?source=...` | HTTP 202 after durable submission and task publication |
+| `GET /api/v1/runs` | Lightweight filtered ledger with limit/offset pagination |
 | `GET /api/v1/runs/{run_id}` | Processing state, timestamps, safe failure code, normalized step count |
+| `GET /api/v1/dashboard` | Durable run counts, recent runs, needs-attention runs |
+| `GET /api/v1/system` | Safe configured model and component versions |
+| `/api/v1/auth/*` | GitHub OAuth, current profile, server-side logout |
 | `POST /api/v1/runs/{run_id}/attributions` | Explicit attribution; HTTP 202 for a new queued operation, HTTP 200 for an existing operation |
 | `GET /api/v1/attributions/{attribution_id}` | Attribution state, decision, evidence, usage, and safe audit metadata |
 | `GET /docs` | Swagger UI |
@@ -132,6 +144,9 @@ docker compose exec worker celery -A app.workers.celery_app:celery_app inspect p
 | `GET /openapi.json` | OpenAPI schema |
 
 Readiness checks connectivity, not migration currency. Apply migrations separately.
+Operational `/api/v1` routes require a session cookie; OAuth start/callback are public.
+Unsafe requests require the configured frontend/backend Origin. Follow the
+[cookie and CORS setup](docs/frontend-contract.md) before using these routes.
 A missing run returns the consistent `RUN_NOT_FOUND` HTTP 404 error.
 
 API errors share this envelope:
@@ -162,6 +177,10 @@ Database and broker URLs are required and masked in settings representations.
 | `RABBITMQ_URL` | Required `amqp://...` or `amqps://...` |
 | `LOG_LEVEL` | `INFO` |
 | `CORS_ALLOWED_ORIGINS` | JSON array, `[]`; explicit HTTP(S) origins only |
+| `FRONTEND_ORIGIN` | `http://localhost:5173`; fixed post-login origin |
+| `GITHUB_CLIENT_ID`, `GITHUB_CLIENT_SECRET` | Backend-only OAuth credentials; required for production API startup |
+| `GITHUB_CALLBACK_URL` | `http://localhost:8000/api/v1/auth/github/callback` |
+| `SESSION_TTL_SECONDS` | `43200`; revocable HttpOnly PostgreSQL session |
 | `MAX_REQUEST_BODY_BYTES` | `10485760`; also bounds service trace persistence |
 | `DB_POOL_SIZE`, `DB_MAX_OVERFLOW` | `5`, `5`, per process |
 | `DEPENDENCY_TIMEOUT_SECONDS` | `3`; connection/pool/query readiness limits |
@@ -296,8 +315,9 @@ terminal output embedded in message text are not interpreted.
 
 Benchmark IDs, reference answers, correctness flags, mistake labels, and row
 provenance are excluded. In particular, `mistake_step` is neither read nor validated
-and never determines sequence. Its indexing semantics remain a future evaluation
-question. Malformed trace structure raises `TraceAdapterError`; empty history is
+and never determines sequence. Phase 8 separately confirms whole-history zero-based
+benchmark indexing for scoring; see [evaluation semantics](docs/phase8-evaluation.md).
+Malformed trace structure raises `TraceAdapterError`; empty history is
 rejected, while empty message content is retained. The adapter does not persist
 or replace the source, and never copies unknown source fields into metadata.
 
@@ -580,7 +600,7 @@ adds the artifact table; run `uv run alembic upgrade head` before starting the u
 See [the compiler and Phase 7 contract](docs/pytest-compiler-v1.md) for exact semantics,
 source validation, API errors, limits, idempotency, and the required isolated harness.
 
-## Next phase
+## Isolated validation and evaluation
 
 Phase 7 validates completed GeneratedTest artifacts asynchronously using
 `POST /api/v1/generated-tests/{generated_test_id}/validations` and
@@ -595,5 +615,8 @@ The optional `validation` Compose profile alone grants Docker socket access to i
 dedicated worker; this is host-level administrative authority. API and ordinary workers
 have no socket. Deploy the runner on a dedicated host/VM for untrusted submissions.
 
-Phase 8 benchmark scoring/evaluation, model comparison, authentication, and frontend
-work remain deferred.
+Phase 8 development evaluation and backend authentication are implemented. See the
+[final backend review](docs/final-backend-pass.md),
+[frontend API contract](docs/frontend-contract.md), and
+[verification record](docs/backend-final-verification-v2.json). Final evaluation
+requires explicit authorization; frontend implementation belongs to its separate branch.

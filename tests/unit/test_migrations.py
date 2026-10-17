@@ -17,7 +17,7 @@ def migration_config(output: StringIO) -> Config:
 def test_migration_has_single_head_and_renders_postgresql_ddl():
     output = StringIO()
     config = migration_config(output)
-    assert ScriptDirectory.from_config(config).get_heads() == ["0007"]
+    assert ScriptDirectory.from_config(config).get_heads() == ["0008"]
     command.upgrade(config, "head", sql=True)
     sql = output.getvalue()
     assert "CREATE TABLE runs" in sql
@@ -30,6 +30,6 @@ def test_migration_has_single_head_and_renders_postgresql_ddl():
 
 def test_downgrade_renders_in_dependency_order():
     output = StringIO()
-    command.downgrade(migration_config(output), "0007:base", sql=True)
+    command.downgrade(migration_config(output), "0008:base", sql=True)
     sql = output.getvalue()
     assert sql.index("DROP TABLE trace_steps") < sql.index("DROP TABLE runs")

@@ -37,6 +37,7 @@ for runs without an analysis operation. Existing completed artifacts are reused.
 | Both executions discriminate correctly | `completed` / `valid` |
 | Attribution abstains | `review_required` / `attribution_abstained` |
 | Spec declines synthesis | `review_required` / `regression_needs_review` |
+| Grounded fixture cannot be invoked by the approved harness | `review_required` / `REPLAY_CONTRACT_INCOMPATIBLE` |
 | Other validation verdict | `review_required` / actual verdict |
 | Provider, compilation, queue, or infrastructure failure | `failed` / safe error code |
 | One-hour deadline expires | `failed` / `ANALYSIS_DEADLINE_EXCEEDED` |
@@ -49,17 +50,22 @@ regenerate artifacts or spend additional inference calls.
 
 ## Controlled live demonstration
 
-Apply migration `0007`, restart the API and ordinary worker, and start the dedicated
+Apply migration head (`0008`), restart the API and ordinary worker, and start the dedicated
 validation worker using the Phase 7 setup. Keep the pinned sandbox image available.
 Configure `OPENAI_MODEL=gpt-5.6-luna` and `OPENAI_REASONING_EFFORT=medium` in the API
 and ordinary worker. Set a sufficient provider timeout for the live run.
 
 ```powershell
 uv run alembic upgrade head
-uv run python -m scripts.run_live_analysis --live
+uv run python -m scripts.run_live_analysis --cookie-file .local/session.cookies --live
 # Resume the SAME operation if the client disconnects:
-uv run python -m scripts.run_live_analysis --live --run-id <printed-run-id>
+uv run python -m scripts.run_live_analysis --cookie-file .local/session.cookies --live --run-id <printed-run-id>
 ```
+
+The authenticated script requires a Netscape-format cookie jar from a successful
+GitHub browser login. Keep it private in ignored `.local`, never commit it. It sends
+the configured frontend Origin and does not implement an authentication bypass.
+See [frontend authentication](frontend-contract.md) for cookie/CORS setup.
 
 The script runs developer-owned deterministic coordinator, calculator, and reporter
 agents, detects their wrong final answer with an external oracle, and submits the
@@ -141,5 +147,6 @@ stage responses, provider IDs, usage, source, and sandbox results are saved in
 `.local/final-e2e-attempt2.json`.
 
 Final backend/AI integration is now verified for this controlled scenario. This is
-not benchmark evaluation or evidence of general attribution accuracy. Phase 8 has
-not been started.
+not benchmark evaluation or evidence of general attribution accuracy. The separate
+Phase 8 research tooling and measurements are documented in
+[Evaluation and experiments](phase8-evaluation.md).

@@ -77,7 +77,7 @@ build pipeline and Docker configuration.
 Each container enforces:
 
 - `--network none`, user `10001:10001`, read-only root filesystem;
-- all capabilities dropped, no-new-privileges, Docker's standard seccomp profile;
+- all capabilities dropped, no-new-privileges, explicit `seccomp=builtin`;
 - no privileged mode, host bind mounts, repository, credentials, or Docker socket;
 - 256 MiB memory with equal memory-swap bound, 1 CPU quota, 32 PIDs by default;
 - a 16 MiB `/tmp` tmpfs with noexec/nosuid/nodev, no shared IPC;
@@ -89,6 +89,13 @@ CPU quota, or seccomp support. Limits are centralized in Settings, exposed throu
 `VALIDATION_*` variables, and captured in runtime identity. Command operations have a
 10-second timeout. Output and JUnit limits default to 32768 bytes each; source retains
 Phase 6's `GENERATED_TEST_MAX_SOURCE_BYTES` bound.
+
+The built-in seccomp profile is selected explicitly for every execution container.
+It does not inherit an administrator's potentially unconfined daemon default.
+Docker Engine 28.1.1 under Docker Desktop was verified with the Phase 7 probes on Windows;
+an engine that rejects this option fails container creation without relaxing policy.
+See [the recovery observations](phase8-development-results-v1.md) for daemon,
+image, runtime-version, and non-root worker socket checks.
 
 No host filesystem is mounted. Exact source bytes travel through stdin and become
 `/tmp/bundle/test_generated.py` with read-only file permissions. This file is owned by

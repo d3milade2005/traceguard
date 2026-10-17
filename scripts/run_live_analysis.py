@@ -7,23 +7,40 @@ creates another run. Generated Python is retrieved only, never executed here.
 import argparse
 import json
 import time
+from http.cookiejar import MozillaCookieJar
 from pathlib import Path
-from urllib.request import Request, urlopen
+from urllib.request import HTTPCookieProcessor, OpenerDirector, Request, build_opener
 
 from app.integrations.execution.controlled_system import execute_calculator_system
 
 
-def request(base: str, path: str, *, body: bytes | None = None) -> dict:
-    req = Request(base + path, data=body, headers={"Content-Type": "application/json"})
-    with urlopen(req, timeout=30) as response:
+def request(
+    base: str,
+    path: str,
+    *,
+    opener: OpenerDirector,
+    origin: str,
+    body: bytes | None = None,
+) -> dict:
+    req = Request(
+        base + path, data=body, headers={"Content-Type": "application/json", "Origin": origin}
+    )
+    with opener.open(req, timeout=30) as response:
         return json.load(response)
 
 
-def wait_for(base: str, path: str, active: set[str]) -> dict:
+def wait_for(
+    base: str,
+    path: str,
+    active: set[str],
+    *,
+    opener: OpenerDirector,
+    origin: str,
+) -> dict:
     deadline = time.monotonic() + 600
     previous = None
     while time.monotonic() < deadline:
-        record = request(base, path)
+        record = request(base, path, opener=opener, origin=origin)
         progress = record["status"], record.get("stage"), record.get("stop_reason")
         if progress != previous:
             print(progress, flush=True)
@@ -37,11 +54,22 @@ def wait_for(base: str, path: str, active: set[str]) -> dict:
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--live", action="store_true", required=True)
-    parser.add_argument("--base-url", default="http://127.0.0.1:8000")
+    parser.add_argument("--base-url", default="http://localhost:8000")
+    parser.add_argument(
+        "--cookie-file",
+        type=Path,
+        required=True,
+        help="Existing authenticated Netscape-format cookie file; never printed",
+    )
+    parser.add_argument("--frontend-origin", default="http://localhost:5173")
     parser.add_argument("--run-id")
     parser.add_argument("--report", type=Path, default=Path(".local/final-e2e.json"))
     args = parser.parse_args()
     base = args.base_url.rstrip("/")
+    cookies = MozillaCookieJar(str(args.cookie_file))
+    cookies.load(ignore_discard=True, ignore_expires=False)
+    opener = build_opener(HTTPCookieProcessor(cookies))
+    connection = {"opener": opener, "origin": args.frontend_origin}
     if args.run_id:
         run_id = args.run_id
     else:
@@ -49,17 +77,21 @@ def main() -> None:
         if trace.steps[-1].output == {"answer": 4}:
             raise RuntimeError("Controlled faulty execution did not fail its external oracle")
         raw = trace.model_dump_json(indent=2).encode()
-        submitted = request(base, "/api/v1/runs?source=controlled.calculator", body=raw)
+        submitted = request(
+            base, "/api/v1/runs?source=controlled.calculator", body=raw, **connection
+        )
         run_id = submitted["id"]
     print("Run ID:", run_id, flush=True)
-    run = wait_for(base, f"/api/v1/runs/{run_id}", {"pending", "queued", "processing"})
+    run = wait_for(
+        base, f"/api/v1/runs/{run_id}", {"pending", "queued", "processing"}, **connection
+    )
     if run["status"] != "normalized":
         raise RuntimeError("Normalization failed; no analysis requested")
     path = f"/api/v1/runs/{run_id}/analysis"
-    analysis = request(base, path, body=b"")
+    analysis = request(base, path, body=b"", **connection)
     if analysis["model"] != "gpt-5.6-luna" or analysis["reasoning_effort"] != "medium":
         raise RuntimeError("Server model configuration differs from the requested live test")
-    analysis = wait_for(base, path, {"active"})
+    analysis = wait_for(base, path, {"active"}, **connection)
     report = {"run": run, "analysis": analysis}
     for key, route in (
         ("attribution_id", "attributions"),
@@ -68,7 +100,7 @@ def main() -> None:
         ("validation_id", "validations"),
     ):
         if analysis[key]:
-            report[route] = request(base, f"/api/v1/{route}/{analysis[key]}")
+            report[route] = request(base, f"/api/v1/{route}/{analysis[key]}", **connection)
     args.report.parent.mkdir(parents=True, exist_ok=True)
     args.report.write_text(json.dumps(report, indent=2) + "\n", encoding="utf-8")
     print("Report:", args.report, flush=True)

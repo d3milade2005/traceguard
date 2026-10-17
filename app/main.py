@@ -12,10 +12,12 @@ from app.api.middleware import (
     RequestContextMiddleware,
     UnexpectedErrorMiddleware,
 )
+from app.api.v1.auth import router as auth_router
 from app.api.v1.router import router as v1_router
 from app.core.config import Settings, get_settings
 from app.core.logging import configure_logging
 from app.db.session import create_database_engine, create_session_factory
+from app.integrations.github import GitHubOAuthClient
 from app.integrations.task_queue import (
     CeleryAttributionPublisher,
     CeleryRegressionPublisher,
@@ -25,10 +27,12 @@ from app.integrations.task_queue import (
 from app.integrations.traces.sources import trace_adapters
 from app.services.analysis_factory import create_analysis_service
 from app.services.attributions import AttributionStore
+from app.services.auth import AuthService
 from app.services.generated_tests import GeneratedTestService
 from app.services.pytest_compiler import PytestCompiler
 from app.services.readiness import ReadinessService
 from app.services.regression_specs import RegressionStore
+from app.services.run_reads import RunReadService
 from app.services.runs import RunService
 from app.services.submission import SubmissionService
 from app.services.validations import ValidationService
@@ -37,12 +41,23 @@ from app.workers.factory import create_celery_app
 
 def create_app(settings: Settings | None = None) -> FastAPI:
     settings = settings or get_settings()
+    settings.validate_api_auth()
     configure_logging(settings)
 
     @asynccontextmanager
     async def lifespan(app: FastAPI) -> AsyncIterator[None]:
         engine = create_database_engine(settings)
         app.state.sessions = create_session_factory(engine)
+        app.state.auth = AuthService(
+            app.state.sessions,
+            settings,
+            GitHubOAuthClient(
+                settings.github_client_id,
+                settings.github_client_secret,
+                settings.github_callback_url,
+                settings.dependency_timeout_seconds,
+            ),
+        )
         app.state.readiness = ReadinessService(
             engine, settings.rabbitmq_url.get_secret_value(), settings.dependency_timeout_seconds
         )
@@ -50,6 +65,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         app.state.queue = queue
         app.state.analyses = create_analysis_service(app.state.sessions, settings, queue)
         app.state.runs = RunService(app.state.sessions, settings.max_request_body_bytes)
+        app.state.run_reads = RunReadService(app.state.sessions)
         app.state.attributions = AttributionStore(app.state.sessions)
         app.state.validations = ValidationService(app.state.sessions, settings)
         app.state.validation_publisher = CeleryValidationPublisher(
@@ -92,12 +108,14 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     app.state.settings = settings
     install_exception_handlers(app)
     app.include_router(health_router)
+    app.include_router(auth_router, prefix=settings.api_v1_prefix)
     app.include_router(v1_router, prefix=settings.api_v1_prefix)
     app.add_middleware(RequestBodyLimitMiddleware, max_bytes=settings.max_request_body_bytes)
     app.add_middleware(UnexpectedErrorMiddleware)
     app.add_middleware(
         CORSMiddleware,
         allow_origins=settings.cors_allowed_origins,
+        allow_credentials=True,
         allow_methods=["GET", "POST"],
         allow_headers=["Content-Type", "X-Request-ID"],
         expose_headers=["X-Request-ID"],

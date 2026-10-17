@@ -26,6 +26,7 @@ from app.core.logging import bind_log_context
 from app.db.models import Analysis, Attribution, RegressionSpecOperation
 from app.integrations.llm.regression import RegressionGenerator
 from app.schemas.attributions import ProviderUsage, ReasoningEffort
+from app.schemas.llm_diagnostics import OutputDiagnostics
 from app.schemas.regression_specs import RegressionRecord, RegressionResult
 from app.services.attribution_input import input_digest
 from app.services.attributions import AttributionStore
@@ -142,7 +143,7 @@ class RegressionService:
                 logger.exception("Regression failed", extra={"status": "failed"})
                 if claim is not None and isinstance(exc, LLMOutputError) and exc.usage is not None:
                     try:
-                        self.record_usage(claim, exc.usage)
+                        self.record_usage(claim, exc.usage, diagnostics=exc.diagnostics)
                     except (OperationalError, TimeoutError) as database_error:
                         self.release(
                             regression_spec_id,
@@ -243,13 +244,20 @@ class RegressionService:
             row.input_sha256 = digest
         return True
 
-    def record_usage(self, claim: RegressionClaim, usage: ProviderUsage) -> bool:
+    def record_usage(
+        self,
+        claim: RegressionClaim,
+        usage: ProviderUsage,
+        *,
+        diagnostics: OutputDiagnostics | None = None,
+    ) -> bool:
         with self.sessions.begin() as session:
             row = self._owned(session, claim)
             if row is None:
                 return False
             for field, value in usage.model_dump().items():
                 setattr(row, field, value)
+            row.output_diagnostics = diagnostics.model_dump(mode="json") if diagnostics else None
         return True
 
     def complete(

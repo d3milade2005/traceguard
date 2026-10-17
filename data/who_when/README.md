@@ -1,5 +1,10 @@
 Who&When Dataset
 
+The confirmed upstream indexing semantics, strict scoring/eligibility policy,
+zero-cost context audit, and frozen grouped split are documented in
+[Phase 8 evaluation](../../docs/phase8-evaluation.md). Use the research runners
+there; benchmark labels remain outside production inference.
+
 This directory contains the local copy of the Who&When benchmark used in this project for failure-attribution research and evaluation.
 
 The dataset is used to study whether the system can identify:

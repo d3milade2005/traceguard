@@ -2,6 +2,8 @@ from typing import Self
 
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 
+CONTEXT_POLICY_VERSION = "phase3-structural-v1"
+
 
 class ContextPolicy(BaseModel):
     """Model-independent limits for the temporary analysis representation."""

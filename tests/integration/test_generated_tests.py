@@ -327,6 +327,14 @@ def test_migration_constraints_foreign_keys_uniqueness_and_downgrade(compilation
     assert "generated_tests" not in inspect(engine).get_table_names()
     assert service.runs.get(run_id).original_trace == original
     with sessions() as session:
-        assert session.get(RegressionSpecOperation, parent_id).status == "completed"
+        # Query only columns present at the historical revision after downgrade.
+        assert (
+            session.scalar(
+                select(RegressionSpecOperation.status).where(
+                    RegressionSpecOperation.id == parent_id
+                )
+            )
+            == "completed"
+        )
     command.upgrade(config, "head")
     command.check(config)

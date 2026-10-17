@@ -68,6 +68,7 @@ class Attribution(Base):
         ),
         CheckConstraint("latency_ms IS NULL OR latency_ms >= 0", name="latency"),
         Index("ix_attributions_status_created_at", "status", "created_at"),
+        Index("ix_attributions_responsible_agent", "responsible_agent"),
     )
 
     id: Mapped[UUID] = mapped_column(primary_key=True, default=uuid4)
@@ -95,6 +96,9 @@ class Attribution(Base):
     latency_ms: Mapped[int | None]
     input_sha256: Mapped[str | None] = mapped_column(String(64))
     context_manifest: Mapped[dict[str, JsonValue] | None] = mapped_column(JSONB, nullable=True)
+    output_diagnostics: Mapped[dict[str, JsonValue] | None] = mapped_column(
+        JSONB(none_as_null=True)
+    )
     failure_code: Mapped[str | None] = mapped_column(String(100))
     failed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     completed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))

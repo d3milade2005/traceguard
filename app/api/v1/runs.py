@@ -4,12 +4,21 @@ from uuid import UUID
 from fastapi import APIRouter, Depends, HTTPException, Query, Request, Response
 from starlette.concurrency import run_in_threadpool
 
-from app.api.dependencies import get_run_service, get_submission_service
-from app.schemas.runs import RunAccepted, RunSubmissionQuery, RunSummary
+from app.api.dependencies import get_run_reads, get_run_service, get_submission_service
+from app.schemas.runs import RunAccepted, RunListQuery, RunPage, RunSubmissionQuery, RunSummary
+from app.services.run_reads import RunReadService
 from app.services.runs import RunService
 from app.services.submission import SubmissionService
 
 router = APIRouter(prefix="/runs", tags=["runs"])
+
+
+@router.get("", response_model=RunPage)
+def list_runs(
+    query: Annotated[RunListQuery, Query()],
+    service: Annotated[RunReadService, Depends(get_run_reads)],
+) -> RunPage:
+    return service.list(query)
 
 
 @router.post(
