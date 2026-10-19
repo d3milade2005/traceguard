@@ -31,8 +31,16 @@ def check_csrf(request: Request) -> None:
         raise CsrfError
 
 
-def require_user(request: Request, response: Response) -> UserProfile:
+def require_user(request: Request, response: Response) -> UserProfile | None:
     settings = request.app.state.settings
+    response.headers["Cache-Control"] = "no-store"
+    if (
+        settings.app_env == "development"
+        and settings.dev_read_access
+        and request.method in {"GET", "HEAD"}
+        and not request.url.path.startswith(f"{settings.api_v1_prefix}/auth/")
+    ):
+        return None
     user = get_auth_service(request).authenticate(request.cookies.get(settings.session_cookie_name))
     if request.method not in {"GET", "HEAD", "OPTIONS"}:
         check_csrf(request)

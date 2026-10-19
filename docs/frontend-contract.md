@@ -269,3 +269,27 @@ Errors retain the existing envelope and X-Request-ID correlation:
 Do not display provider payloads or assume an inconclusive validation is valid. Future
 structured-output failures expose only schema-owned paths, bounded error categories,
 counts, digests, usage, and versions; rejected text and hidden reasoning are not retained.
+
+## Frontend local-read integration increment (2026-10-19)
+
+GitHub frontend integration remains deferred. Explicit `DEV_READ_ACCESS=true` is
+available only with `APP_ENV=development`; it defaults false and configuration rejects
+it outside development. It permits unauthenticated operational GET/HEAD reads only.
+Auth endpoints and all writes retain the existing session/Origin checks. The frontend
+uses a local access placeholder and sends no auth/profile/logout requests.
+
+Two additive persisted-evidence reads use existing RunService methods:
+
+| Method | Path (relative to /api/v1) | Success | Important errors |
+| --- | --- | --- | --- |
+| GET | /runs/{runId}/trace | 200 CanonicalTrace: source, task, complete ordered canonical steps | 401 without session/bypass; 404 missing run; 409 not normalized; 422 malformed UUID |
+| GET | /runs/{runId}/original-trace | 200 unchanged submitted JSON bytes | 401 without session/bypass; 404 missing run; 422 malformed UUID |
+
+Both reads are no-store. The original payload is returned as application/json with
+nosniff. Neither route enqueues processing, reconstructs context, invokes a provider,
+or exposes the internal RunRecord. Historical selected-context metadata remains the
+Attribution context_manifest. Truncated excerpt bodies were not persisted and are
+unavailable; the frontend identifies truncation and displays canonical data explicitly.
+
+See [local integration settings](frontend-local-integration.md). All other endpoint
+contracts above remain unchanged.

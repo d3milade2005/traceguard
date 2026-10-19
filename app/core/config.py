@@ -23,6 +23,7 @@ class Settings(BaseSettings):
     app_name: str = Field(default="Traceguard", min_length=1)
     app_env: Literal["development", "test", "production"] = "development"
     debug: bool = False
+    dev_read_access: bool = False
     api_v1_prefix: str = "/api/v1"
     database_url: SecretStr
     rabbitmq_url: SecretStr
@@ -166,6 +167,8 @@ class Settings(BaseSettings):
 
     @model_validator(mode="after")
     def validate_production(self) -> Self:
+        if self.dev_read_access and self.app_env != "development":
+            raise ValueError("DEV_READ_ACCESS is restricted to development")
         if self.app_env == "production" and self.debug:
             raise ValueError("DEBUG must be false in production")
         callback = urlsplit(self.github_callback_url)

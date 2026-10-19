@@ -6,6 +6,7 @@ from starlette.concurrency import run_in_threadpool
 
 from app.api.dependencies import get_run_reads, get_run_service, get_submission_service
 from app.schemas.runs import RunAccepted, RunListQuery, RunPage, RunSubmissionQuery, RunSummary
+from app.schemas.traces import CanonicalTrace
 from app.services.run_reads import RunReadService
 from app.services.runs import RunService
 from app.services.submission import SubmissionService
@@ -51,3 +52,26 @@ async def submit_run(
 @router.get("/{run_id}", response_model=RunSummary)
 def get_run(run_id: UUID, service: Annotated[RunService, Depends(get_run_service)]) -> RunSummary:
     return service.summary(run_id)
+
+
+@router.get("/{run_id}/trace", response_model=CanonicalTrace)
+def get_canonical_trace(
+    run_id: UUID, service: Annotated[RunService, Depends(get_run_service)]
+) -> CanonicalTrace:
+    return service.canonical_trace(run_id)
+
+
+@router.get(
+    "/{run_id}/original-trace",
+    response_class=Response,
+    responses={200: {"content": {"application/json": {"schema": {"type": "object"}}}}},
+)
+def get_original_trace(
+    run_id: UUID, service: Annotated[RunService, Depends(get_run_service)]
+) -> Response:
+    record = service.get(run_id)
+    return Response(
+        content=record.original_trace,
+        media_type="application/json",
+        headers={"Cache-Control": "no-store", "X-Content-Type-Options": "nosniff"},
+    )
