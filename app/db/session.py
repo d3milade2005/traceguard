@@ -1,6 +1,7 @@
 import logging
 
 from sqlalchemy import Engine, create_engine, text
+from sqlalchemy.engine import make_url
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm import Session, sessionmaker
 
@@ -11,8 +12,11 @@ logger = logging.getLogger(__name__)
 
 
 def create_database_engine(settings: Settings) -> Engine:
+    url = make_url(settings.database_url.get_secret_value())
+    options = str(url.query.get("options", ""))
+    statement_timeout = settings.dependency_timeout_seconds * 1000
     return create_engine(
-        settings.database_url.get_secret_value(),
+        url,
         pool_pre_ping=True,
         pool_size=settings.db_pool_size,
         max_overflow=settings.db_max_overflow,
@@ -20,7 +24,7 @@ def create_database_engine(settings: Settings) -> Engine:
         hide_parameters=True,
         connect_args={
             "connect_timeout": settings.dependency_timeout_seconds,
-            "options": f"-c statement_timeout={settings.dependency_timeout_seconds * 1000}",
+            "options": f"{options} -c statement_timeout={statement_timeout}",
         },
     )
 

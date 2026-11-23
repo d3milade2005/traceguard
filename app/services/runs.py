@@ -3,12 +3,21 @@ import re
 from datetime import UTC, datetime
 from uuid import UUID
 
-from sqlalchemy import update
+from sqlalchemy import select, update
+from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.orm import Session, sessionmaker
 
-from app.core.exceptions import InvalidTraceError, RunNotFoundError
-from app.db.models import Run, RunStatus
-from app.schemas.runs import RunCreate, RunRecord
+from app.core.exceptions import (
+    InvalidTraceError,
+    RunNotFoundError,
+    RunNotNormalizedError,
+    SubmissionConflictError,
+)
+from app.db.models import Run, RunStatus, TraceStep
+from app.schemas.runs import RunCreate, RunRecord, RunSummary
+from app.schemas.traces import CanonicalTrace
+from app.schemas.traces import TraceStep as CanonicalStep
+from app.services.run_reads import RunReadService
 
 logger = logging.getLogger(__name__)
 
@@ -18,10 +27,16 @@ class RunService:
         self.sessions = sessions
         self.max_trace_bytes = max_trace_bytes
 
-    def create(self, data: RunCreate) -> RunRecord:
-        """Commit the unchanged source before returning; no work is queued in this phase."""
-        if len(data.original_trace) > self.max_trace_bytes:
+    def check_size(self, raw: bytes) -> None:
+        if len(raw) > self.max_trace_bytes:
             raise InvalidTraceError
+
+    def summary(self, run_id: UUID) -> RunSummary:
+        return RunReadService(self.sessions).summary(run_id)
+
+    def create(self, data: RunCreate) -> RunRecord:
+        """Commit the unchanged source before returning to the queue handoff."""
+        self.check_size(data.original_trace)
         with self.sessions.begin() as session:
             run = Run(**data.model_dump())
             session.add(run)
@@ -39,6 +54,49 @@ class RunService:
             if run is None:
                 raise RunNotFoundError
             return RunRecord.model_validate(run)
+
+    def create_idempotent(self, data: RunCreate, run_id: UUID) -> RunRecord:
+        """Use the existing primary key to deduplicate a source's stable execution ID."""
+        self.check_size(data.original_trace)
+        with self.sessions.begin() as session:
+            session.execute(
+                insert(Run)
+                .values(id=run_id, **data.model_dump())
+                .on_conflict_do_nothing(index_elements=[Run.id])
+            )
+            row = session.get(Run, run_id)
+            assert row is not None
+            if (
+                row.source != data.source
+                or row.original_trace != data.original_trace
+                or row.failure_signal != data.failure_signal
+            ):
+                raise SubmissionConflictError
+            return RunRecord.model_validate(row)
+
+    def canonical_trace(self, run_id: UUID) -> CanonicalTrace:
+        """Load complete persisted evidence without exposing ORM objects to selection."""
+        with self.sessions() as session:
+            row = session.execute(
+                select(Run.source, Run.task, Run.status).where(Run.id == run_id)
+            ).one_or_none()
+            if row is None:
+                raise RunNotFoundError
+            if row.status != RunStatus.NORMALIZED or row.task is None:
+                raise RunNotNormalizedError
+            steps = session.scalars(
+                select(TraceStep).where(TraceStep.run_id == run_id).order_by(TraceStep.sequence)
+            ).all()
+            return CanonicalTrace(
+                source=row.source,
+                task=row.task,
+                steps=tuple(
+                    CanonicalStep.model_validate(
+                        {name: getattr(step, name) for name in CanonicalStep.model_fields}
+                    )
+                    for step in steps
+                ),
+            )
 
     def record_failure(self, run_id: UUID, code: str) -> bool:
         """Persist a safe failure code in a fresh transaction; repeated calls are harmless."""

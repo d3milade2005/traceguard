@@ -15,7 +15,34 @@ from sqlalchemy.engine import make_url
 from app.core.config import Settings
 
 log_context: ContextVar[Mapping[str, str]] = ContextVar("log_context", default=MappingProxyType({}))
-LOG_FIELDS = ("request_id", "run_id", "task_id", "component", "stage", "status", "duration_ms")
+LOG_FIELDS = (
+    "request_id",
+    "run_id",
+    "task_id",
+    "component",
+    "source",
+    "stage",
+    "status",
+    "duration_ms",
+    "attribution_id",
+    "regression_spec_id",
+    "generated_test_id",
+    "compiler_version",
+    "validation_id",
+    "validator_version",
+    "variant",
+    "container_id",
+    "verdict",
+    "provider",
+    "model",
+    "prompt_version",
+    "response_id",
+    "input_tokens",
+    "output_tokens",
+    "reasoning_tokens",
+    "latency_ms",
+    "output_diagnostics",
+)
 
 
 @contextmanager
@@ -67,6 +94,8 @@ def configure_logging(settings: Settings) -> None:
         broker_url,
         make_url(database_url).password or "",
         unquote(urlsplit(broker_url).password or ""),
+        settings.openai_api_key.get_secret_value() if settings.openai_api_key else "",
+        settings.github_client_secret.get_secret_value() if settings.github_client_secret else "",
     )
     handler = logging.StreamHandler(sys.stderr)
     handler.setFormatter(JsonFormatter(secrets))
@@ -80,3 +109,6 @@ def configure_logging(settings: Settings) -> None:
     # Request middleware logs status and duration without URLs, query strings, or bodies.
     logging.getLogger("uvicorn.access").disabled = True
     logging.getLogger("sqlalchemy.engine").setLevel(logging.WARNING)
+    # SDK debug logging can include request bodies; never inherit application DEBUG.
+    for name in ("openai", "httpx", "httpcore"):
+        logging.getLogger(name).setLevel(logging.WARNING)

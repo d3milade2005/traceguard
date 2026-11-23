@@ -57,7 +57,7 @@ def test_failure_code_cannot_contain_exception_text():
     sessions.begin.assert_not_called()
 
 
-def test_celery_configuration_and_no_placeholder_tasks(settings):
+def test_celery_configuration_and_normalization_task(settings):
     from app.workers.celery_app import create_celery_app
 
     celery = create_celery_app(settings)
@@ -67,7 +67,13 @@ def test_celery_configuration_and_no_placeholder_tasks(settings):
     assert celery.conf.broker_connection_max_retries == 5
     assert celery.conf.worker_prefetch_multiplier == 1
     assert celery.conf.broker_transport_options["confirm_publish"]
-    assert not [name for name in celery.tasks if not name.startswith("celery.")]
+    assert {name for name in celery.tasks if not name.startswith("celery.")} == {
+        "traceguard.process_run",
+        "traceguard.attribute_run",
+        "traceguard.generate_regression_spec",
+        "traceguard.advance_analysis",
+    }
+    assert celery.tasks["traceguard.process_run"].reject_on_worker_lost
     assert "traceguard" in celery.amqp.queues
 
 

@@ -1,0 +1,110 @@
+{
+  "compatible": 3,
+  "docker_executions": 0,
+  "historical_artifact_digest": "13c75e382ae118b1ab81736a5e48e222aa86cad962f1f298cf7f81d40f793371",
+  "incompatible": 3,
+  "note": "Offline compatibility checks of saved model-selected values. Historical results are not modified or rescored.",
+  "provider_calls": 0,
+  "replay_contract_version": "controlled-suite-replay-v1",
+  "samples": [
+    {
+      "current_rejection_code": null,
+      "historical_verdict": "valid",
+      "replay_compatible": true,
+      "sample_id": "arithmetic",
+      "saved_snapshot": {
+        "preconditions": [
+          {
+            "operation": "add"
+          }
+        ],
+        "stimulus": {
+          "left": 2,
+          "right": 2
+        }
+      },
+      "saved_spec_digest": "626f8eab128f77b5732b23eb3dd0850cfb02f99f3d8b443b4e1780ff48b4cefe"
+    },
+    {
+      "current_rejection_code": null,
+      "historical_verdict": "valid",
+      "replay_compatible": true,
+      "sample_id": "missing-field",
+      "saved_snapshot": {
+        "preconditions": [
+          {
+            "mode": "public"
+          }
+        ],
+        "stimulus": {
+          "name": "Ada"
+        }
+      },
+      "saved_spec_digest": "08375413188f1e0d5e94336283c78de361fc38f86cf26d17adc0607297888252"
+    },
+    {
+      "current_rejection_code": null,
+      "historical_verdict": "valid",
+      "replay_compatible": true,
+      "sample_id": "unexpected-field",
+      "saved_snapshot": {
+        "preconditions": [
+          {
+            "mode": "public"
+          }
+        ],
+        "stimulus": {
+          "name": "Ada"
+        }
+      },
+      "saved_spec_digest": "b803de006ef8706c8e0478ffe0fda52f63ce632e369c206bc35a891fc3a0b5c5"
+    },
+    {
+      "current_rejection_code": "REPLAY_CONTRACT_INCOMPATIBLE",
+      "historical_verdict": "inconclusive",
+      "replay_compatible": false,
+      "sample_id": "incorrect-string",
+      "saved_snapshot": {
+        "preconditions": [
+          "public"
+        ],
+        "stimulus": {
+          "name": "Ada"
+        }
+      },
+      "saved_spec_digest": "f4131c46939e405ece2e2b0d298874aa6513b0714eb3d5c0bf588931c22b1308"
+    },
+    {
+      "current_rejection_code": "REPLAY_CONTRACT_INCOMPATIBLE",
+      "historical_verdict": "inconclusive",
+      "replay_compatible": false,
+      "sample_id": "forbidden-content",
+      "saved_snapshot": {
+        "preconditions": [
+          "public"
+        ],
+        "stimulus": {
+          "name": "Ada",
+          "text": "Ada SECRET"
+        }
+      },
+      "saved_spec_digest": "2ffcab6337f7e10ba6a8148a4caf71c2af1eb53e9ec614590c32f2b1a6549adf"
+    },
+    {
+      "current_rejection_code": "REPLAY_CONTRACT_INCOMPATIBLE",
+      "historical_verdict": "inconclusive",
+      "replay_compatible": false,
+      "sample_id": "missing-completion",
+      "saved_snapshot": {
+        "preconditions": [
+          "public"
+        ],
+        "stimulus": {
+          "name": "Ada"
+        }
+      },
+      "saved_spec_digest": "5cb61573a76b4f4eef2772fb4898866d83a2e4c8d020bd0563614617fbade7ff"
+    }
+  ],
+  "version": "saved-replay-contract-review-v1"
+}
