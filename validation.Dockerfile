@@ -8,6 +8,8 @@ RUN mkdir -p /opt/runtime/app/integrations/execution \
     && touch /opt/runtime/app/__init__.py /opt/runtime/app/integrations/__init__.py /opt/runtime/app/integrations/execution/__init__.py
 COPY app/regression_runtime.py /opt/runtime/app/regression_runtime.py
 COPY app/integrations/execution/calculator.py /opt/runtime/app/integrations/execution/calculator.py
+COPY app/integrations/execution/refund.py /opt/runtime/app/integrations/execution/refund.py
+COPY app/integrations/execution/langgraph_refund.py /opt/runtime/app/integrations/execution/langgraph_refund.py
 COPY app/integrations/execution/sandbox/conftest.py app/integrations/execution/sandbox/entrypoint.py /opt/runner/
 ENV PYTHONDONTWRITEBYTECODE=1 PYTHONUNBUFFERED=1
 USER 10001:10001

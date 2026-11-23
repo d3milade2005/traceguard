@@ -1,5 +1,9 @@
 # Traceguard
 
+LangGraph V1 ingestion, the portable external helper, real refund graph and prepared live
+demonstration are documented in [LangGraph integration](docs/langgraph-integration-v1.md).
+External replay stops for review; live inference remains explicit opt-in.
+
 Phase 8 research tooling, the full offline context audit, fixed evaluation split,
 and explicit development/final commands are documented in
 [Evaluation and experiments](docs/phase8-evaluation.md). The two evaluation tracks
@@ -7,7 +11,10 @@ remain separate; paid inference requires `--live` and an explicit call budget.
 
 The integrated backend analysis workflow and opt-in two-call live demonstration are
 documented in [Analysis pipeline](docs/analysis-pipeline.md). The development
-experiments are complete; the 149-record final evaluation remains unrun.
+experiments and the frozen 149-record final attribution evaluation are complete.
+The [23 November research-readiness record](docs/research-readiness-2026-11-23.txt)
+distinguishes the benchmark, historical regression results, and the separate fixed
+offline LangGraph replay. It also identifies the immutable evidence package.
 
 Backend for post-mortem debugging of failed multi-agent executions.
 The pipeline preserves a failed trace, normalizes it, attributes the

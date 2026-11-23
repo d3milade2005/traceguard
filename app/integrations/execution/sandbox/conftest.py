@@ -1,23 +1,50 @@
 """Pinned PyTest fixture and assertion provenance hook, used only in the sandbox."""
 
+import json
 import os
 from collections.abc import Generator
 from pathlib import Path
 
 import pytest
 from pluggy import Result
+from pydantic import JsonValue
 
 from app.integrations.execution.calculator import CorrectedCalculator, FaultyCalculator
-from app.regression_runtime import RegressionTestHarness
+from app.integrations.execution.langgraph_refund import CONTRACT, replay
+from app.integrations.execution.refund import DECISION_AGENT, RefundEligibilityHarness
+from app.regression_runtime import RegressionObservation, RegressionTestHarness
+
+
+class ControlledHarness:
+    identifier = "traceguard.agent-invocation"
+    version = "1"
+
+    def __init__(self, variant: str) -> None:
+        self.variant = variant
+
+    def invoke(
+        self, *, target_agent: str, stimulus: JsonValue, preconditions: tuple[JsonValue, ...]
+    ) -> RegressionObservation:
+        harness: RegressionTestHarness
+        if isinstance(stimulus, dict) and stimulus.get("replay_contract") == CONTRACT:
+            fixtures = json.loads(os.environ["TRACEGUARD_REPLAY_FIXTURES"])
+            return replay(target_agent, stimulus, preconditions, fixtures, self.variant)
+        if target_agent == DECISION_AGENT:
+            harness = RefundEligibilityHarness(self.variant)
+        else:
+            harness = FaultyCalculator() if self.variant == "faulty" else CorrectedCalculator()
+        return harness.invoke(
+            target_agent=target_agent, stimulus=stimulus, preconditions=preconditions
+        )
 
 
 @pytest.fixture
 def regression_harness() -> RegressionTestHarness:
     variant = os.environ["TRACEGUARD_VARIANT"]
     if variant == "faulty":
-        return FaultyCalculator()
+        return ControlledHarness(variant)
     if variant == "corrected":
-        return CorrectedCalculator()
+        return ControlledHarness(variant)
     raise ValueError("Unsupported trusted variant")
 
 

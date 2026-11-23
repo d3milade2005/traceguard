@@ -58,6 +58,11 @@ class RunNotFoundError(ApplicationError):
     public_message = "The requested diagnostic run does not exist."
 
 
+class SubmissionConflictError(ApplicationError):
+    code = "SUBMISSION_CONFLICT"
+    public_message = "This execution ID already identifies a different submitted trace."
+
+
 class InvalidTraceError(ApplicationError):
     code = "INVALID_TRACE"
     public_message = "The trace exceeds the configured size limit."

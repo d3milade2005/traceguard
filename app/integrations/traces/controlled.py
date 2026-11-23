@@ -16,7 +16,7 @@ class ControlledTraceAdapter:
     def adapt(self, record: Mapping[str, JsonValue]) -> CanonicalTrace:
         try:
             trace = CanonicalTrace.model_validate_json(json.dumps(dict(record)))
-            if trace.source != "controlled.calculator":
+            if trace.source not in {"controlled.calculator", "controlled.refund"}:
                 raise ValueError("Unexpected controlled trace source")
             return trace
         except (ValueError, ValidationError) as exc:

@@ -14,8 +14,8 @@ from evaluation.context import analysis_context, context_statistics
 from evaluation.metrics import score
 from evaluation.who_when import Sample, labels, validate_manifest
 
-FREEZE_VERSION = "phase8-freeze-v2"
-RUNNER_VERSION = "phase8-runner-v2"
+FREEZE_VERSION = "phase8-freeze-v3"
+RUNNER_VERSION = "phase8-runner-v3"
 
 
 def dataset_identity(root: Path, samples: list[Sample]) -> dict:

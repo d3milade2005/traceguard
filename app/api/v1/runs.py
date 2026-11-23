@@ -30,7 +30,10 @@ def list_runs(
         "requestBody": {
             "required": True,
             "content": {"application/json": {"schema": {"type": "object"}}},
-            "description": "Original UTF-8 record: question and history only; no benchmark labels.",
+            "description": (
+                "Original source-specific UTF-8 JSON. Who&When accepts question/history only; "
+                "LangGraph requires a langgraph-v1 envelope with an explicit failure signal."
+            ),
         }
     },
 )
@@ -45,6 +48,7 @@ async def submit_run(
     result = await run_in_threadpool(
         service.submit, query.source, await request.body(), request.state.request_id
     )
+    response.status_code = 202 if result.status in {"pending", "queued", "processing"} else 200
     response.headers["Location"] = str(request.url_for("get_run", run_id=str(result.id)))
     return result
 

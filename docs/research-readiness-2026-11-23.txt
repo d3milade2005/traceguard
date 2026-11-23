@@ -1,0 +1,58 @@
+Research readiness — 23 November 2026
+
+The frozen Experiment A evaluated 149 Who&When records, once each, using the
+recorded gpt-5.6-terra/high configuration. It is separate from test synthesis.
+Exact agent: 65/147; exact step: 51/146; joint: 47/144; valid attributed coverage:
+115/149. All predictions, errors, abstentions and label anomalies are preserved.
+
+Immutable package:
+.local/experiments/who-when-terra-high-2026-11-23-final.zip
+SHA-256 9e482c22e639dbc3e3735c7638688b50425af01a41505780c43189ac7afb6300
+The package is an external research deliverable, not a Git-tracked dependency.
+Never modify it or rerun its paid launcher merely to recompute saved statistics.
+
+Readiness evidence and academic/presentation blueprints:
+.local/research-readiness-2026-11-23/READINESS_REPORT.html
+.local/research-readiness-2026-11-23/PROTOCOL.txt
+.local/research-readiness-2026-11-23/offline-replay-v1/
+.local/research-readiness-2026-11-23/verification/
+
+New research-only evaluation/langgraph_sandbox/harness.py executes the actual
+examples/langgraph_refund/application.py StateGraph with deterministic nodes.
+Its contract accepts only the exact fixed dates/policy and target. It reuses an
+unchanged saved controlled.refund model-generated specification/test, compiled
+byte-identically with the real compiler. The test fails the intended assertion
+on the faulty graph and passes the corrected graph in all three paired runs.
+This is one fixed cross-application replay artifact, not three independent
+synthesis cases and not new live-model attribution or synthesis.
+
+Production's generic external LangGraph preflight remains review_required.
+The genuine historical live LangGraph run still has no generated/validated test.
+No replay result should be retroactively attached to that historical analysis.
+The six historical Luna suite artifacts retain their original 3/6 valid result;
+new unmodified replay again yields three valid and three inconclusive pairs.
+
+New offline verification: 841 passed (720 unit, 121 integration), 19 excluded;
+lock/dependency checks, Ruff and mypy's 109 app files passed. The complete context
+audit independently reproduced 162/181 retention. These software checks do not
+measure attribution accuracy or stochastic reliability. See raw logs and XML.
+
+Building the replay sandbox (no inference):
+1. Install the locked host environment with uv sync --locked --group dev
+   --group langgraph --group evaluation. Configure Docker Linux containers.
+2. Build the current production validation image with the exact bundle digest;
+   the readiness package's build_sandboxes.py retains minimal contexts/logs.
+3. From repository root:
+   python -m scripts.build_langgraph_replay_sandbox --base-image <verified-base:tag>
+     --replay-image <new-replay:tag> --output <new-evidence-directory>
+4. Use the preserved readiness run_replay.py with a fresh --output directory.
+   It expects the preserved historical refund export and six original artifacts.
+   All generated code execution is confined to Docker. No API key is required.
+
+The replay image has its own identity and bundle digest; it is never represented
+as the unmodified production image. The runner retains production containment
+and assertion-provenance checks. No arbitrary uploaded graph/code is executable.
+
+Read READINESS_REPORT.html before revising academic claims. Documents and slides
+were not edited. Current unqualified live end-to-end synthesis claims remain
+unsupported; the report supplies the exact qualifications and correction plan.

@@ -2,7 +2,7 @@ import logging
 from collections.abc import Mapping
 from datetime import UTC, datetime
 from typing import Protocol
-from uuid import UUID
+from uuid import NAMESPACE_URL, UUID, uuid5
 
 from sqlalchemy import select
 
@@ -10,6 +10,7 @@ from app.core.exceptions import QueuePublishError, UnsupportedTraceSourceError
 from app.core.run_status import RunStatus
 from app.db.models import Run
 from app.integrations.traces.contracts import TraceAdapter, decode_record
+from app.schemas.langgraph import LangGraphTrace
 from app.schemas.runs import RunAccepted, RunCreate
 from app.services.runs import RunService
 
@@ -33,15 +34,22 @@ class SubmissionService:
         if adapter is None:
             raise UnsupportedTraceSourceError
         self.runs.check_size(raw)
-        adapter.validate_submission(decode_record(raw))
-        record = self.runs.create(
-            RunCreate(
-                source=source,
-                original_trace=raw,
-                failure_signal="developer_report",
-                request_id=request_id,
-            )
+        payload = decode_record(raw)
+        adapter.validate_submission(payload)
+        data = RunCreate(
+            source=source,
+            original_trace=raw,
+            failure_signal="developer_report",
+            request_id=request_id,
         )
+        if source == "langgraph":
+            trace = LangGraphTrace.model_validate_json(raw)
+            data = data.model_copy(update={"failure_signal": trace.failure.kind})
+            record = self.runs.create_idempotent(
+                data, uuid5(NAMESPACE_URL, f"traceguard:langgraph-v1:{trace.execution_id}")
+            )
+        else:
+            record = self.runs.create(data)
         publication_error: QueuePublishError | None = None
         # The original is already committed. Serialize this handoff with worker claims,
         # so a fast worker cannot have its processing/normalized state overwritten.
@@ -49,6 +57,8 @@ class SubmissionService:
             run = session.execute(
                 select(Run).where(Run.id == record.id).with_for_update()
             ).scalar_one()
+            if run.status != RunStatus.PENDING:
+                return RunAccepted(id=run.id, status=run.status)
             try:
                 self.publisher.publish(run.id, request_id)
             except QueuePublishError as exc:

@@ -53,6 +53,7 @@ def main() -> None:
             "HOME": "/tmp",
             "TMPDIR": "/tmp",
             "TRACEGUARD_VARIANT": os.environ["TRACEGUARD_VARIANT"],
+            "TRACEGUARD_REPLAY_FIXTURES": os.environ.get("TRACEGUARD_REPLAY_FIXTURES", "{}"),
         },
     )
     exceeded = threading.Event()

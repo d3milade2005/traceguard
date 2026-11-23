@@ -39,7 +39,7 @@ class RunSubmissionQuery(BaseModel):
 
 class RunAccepted(BaseModel):
     id: UUID
-    status: Literal[RunStatus.QUEUED]
+    status: RunStatus
 
 
 class RunLedgerItem(BaseModel):

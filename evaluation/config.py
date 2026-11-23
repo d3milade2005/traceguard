@@ -1,6 +1,8 @@
 """Explicit research configuration, independent of application DB/broker settings."""
 
 import hashlib
+import platform
+from importlib.metadata import version
 from pathlib import Path
 from typing import Literal
 
@@ -17,6 +19,7 @@ from evaluation.artifacts import digest
 from evaluation.context import RUN_ID_POLICY
 from evaluation.freeze import RUNNER_VERSION
 from evaluation.harness import REPLAY_CONTRACT_VERSION
+from evaluation.provider import API_BASE_URL, CAPTURE_VERSION
 
 ROOT = Path(__file__).resolve().parents[1]
 
@@ -49,6 +52,10 @@ def inference_config(
         "scripts/build_evaluation_sandbox.py",
         "scripts/compare_evaluations.py",
         "scripts/freeze_evaluation.py",
+        "scripts/prepare_attribution.py",
+        "scripts/analyze_attribution.py",
+        "scripts/verify_attribution.py",
+        "pyproject.toml",
         "uv.lock",
         "app/services/context.py",
         "app/core/context.py",
@@ -68,8 +75,8 @@ def inference_config(
     for relative in paths:
         path = ROOT / relative
         files.extend(sorted(path.rglob("*.py")) if path.is_dir() else [path])
-    return {
-        "version": "phase8-v2",
+    config = {
+        "version": "phase8-v3",
         "runner_version": RUNNER_VERSION,
         "model": model,
         "reasoning_effort": effort,
@@ -95,3 +102,22 @@ def inference_config(
             }
         ),
     }
+    if track == "attribution":
+        from app.schemas.attributions import AttributionDecision
+
+        config |= {
+            "provider_capture_version": CAPTURE_VERSION,
+            "api_base_url": API_BASE_URL,
+            "service_tier": "default",
+            "sdk_max_retries": 0,
+            "sample_retries": 0,
+            "response_schema_digest": digest(AttributionDecision.model_json_schema()),
+            "runtime": {
+                "python": platform.python_version(),
+                "packages": {
+                    name: version(name)
+                    for name in ("openai", "pydantic", "pydantic-settings", "pyarrow", "httpx2")
+                },
+            },
+        }
+    return config

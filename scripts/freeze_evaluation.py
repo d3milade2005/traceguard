@@ -20,6 +20,7 @@ def main() -> None:
         "--manifest", type=Path, default=ROOT / "research/manifests/who_when-v1.json"
     )
     parser.add_argument("--dataset", type=Path, default=ROOT / "data/who_when")
+    parser.add_argument("--preparation", type=Path, help="Prospective Experiment A protocol JSON")
     parser.add_argument(
         "--review", type=Path, required=True, help="Offline development error-analysis artifact"
     )
@@ -49,19 +50,28 @@ def main() -> None:
             baseline["model"],
             baseline["reasoning_effort"],
             ContextPolicy.model_validate(baseline["context_policy"]),
-            ProviderSettings(),
+            ProviderSettings(
+                openai_timeout_seconds=baseline["timeout_seconds"],
+                openai_max_output_tokens=baseline["max_output_tokens"],
+            ),
         )
         # Code hardening may change the source digest. Every decision-affecting setting
         # must match; exact saved inputs/contexts/scoring were independently checked above.
-        if any(
-            current.get(k) != v
-            for k, v in baseline.items()
-            if k not in {"source_digest", "version", "runner_version"}
-        ):
+        permitted_metadata = {"source_digest", "version", "runner_version"}
+        if {k: v for k, v in current.items() if k not in permitted_metadata} != {
+            k: v for k, v in baseline.items() if k not in permitted_metadata
+        }:
             parser.error(
                 "Inference settings changed; a separately authorized development run is required"
             )
         final_members = [m for m in manifest["members"] if m["partition"] == "final"]
+        preparation = read_json(args.preparation) if args.preparation else None
+        if preparation is not None and (
+            preparation["inference"] != current
+            or preparation["manifest_digest"] != config["manifest_digest"]
+            or preparation["data"] != dataset_identity(args.dataset, samples)
+        ):
+            parser.error("Prospective protocol no longer matches the reviewed implementation")
         revision = subprocess.check_output(
             ["git", "rev-parse", "HEAD"], cwd=ROOT, text=True
         ).strip()
@@ -86,6 +96,10 @@ def main() -> None:
                     "Working source digest is authoritative, including uncommitted changes."
                 ),
                 "final_provider_calls": 0,
+                "preparation_digest": digest(preparation) if preparation else None,
+                "source_snapshot_digest": (
+                    preparation["source_snapshot_digest"] if preparation else None
+                ),
             },
         )
     print("Frozen configuration saved:", args.output)

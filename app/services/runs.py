@@ -4,9 +4,15 @@ from datetime import UTC, datetime
 from uuid import UUID
 
 from sqlalchemy import select, update
+from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.orm import Session, sessionmaker
 
-from app.core.exceptions import InvalidTraceError, RunNotFoundError, RunNotNormalizedError
+from app.core.exceptions import (
+    InvalidTraceError,
+    RunNotFoundError,
+    RunNotNormalizedError,
+    SubmissionConflictError,
+)
 from app.db.models import Run, RunStatus, TraceStep
 from app.schemas.runs import RunCreate, RunRecord, RunSummary
 from app.schemas.traces import CanonicalTrace
@@ -48,6 +54,25 @@ class RunService:
             if run is None:
                 raise RunNotFoundError
             return RunRecord.model_validate(run)
+
+    def create_idempotent(self, data: RunCreate, run_id: UUID) -> RunRecord:
+        """Use the existing primary key to deduplicate a source's stable execution ID."""
+        self.check_size(data.original_trace)
+        with self.sessions.begin() as session:
+            session.execute(
+                insert(Run)
+                .values(id=run_id, **data.model_dump())
+                .on_conflict_do_nothing(index_elements=[Run.id])
+            )
+            row = session.get(Run, run_id)
+            assert row is not None
+            if (
+                row.source != data.source
+                or row.original_trace != data.original_trace
+                or row.failure_signal != data.failure_signal
+            ):
+                raise SubmissionConflictError
+            return RunRecord.model_validate(row)
 
     def canonical_trace(self, run_id: UUID) -> CanonicalTrace:
         """Load complete persisted evidence without exposing ORM objects to selection."""

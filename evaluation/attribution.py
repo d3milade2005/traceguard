@@ -8,7 +8,13 @@ from app.schemas.attributions import LLMResult, ReasoningEffort
 from app.services.attribution_input import build_attribution_request, input_digest
 from app.services.attribution_validation import validate_attribution
 from app.services.context import ContextManager
-from evaluation.artifacts import Experiment, RecordedCallFailure, safe_failure
+from evaluation.artifacts import (
+    Experiment,
+    RecordedCallFailure,
+    digest,
+    ensure_snapshot,
+    safe_failure,
+)
 from evaluation.context import analysis_context, context_statistics
 from evaluation.metrics import score
 from evaluation.who_when import Sample, labels, retention
@@ -41,6 +47,15 @@ def evaluate_sample(
         stage = "attribution_input"
         request = build_attribution_request(selected, trace, model=model, reasoning_effort=effort)
         request_digest = input_digest(request)
+        ensure_snapshot(
+            experiment.root / "evidence" / f"{digest(sample.sample_id)}.json",
+            {
+                "sample_id": sample.sample_id,
+                "canonical_trace": trace.model_dump(mode="json"),
+                "selected_context": selected.model_dump(mode="json"),
+                "request": request.model_dump(mode="json"),
+            },
+        )
         stage = "attribution_provider"
         result = experiment.call(
             sample.sample_id,

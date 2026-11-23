@@ -57,6 +57,7 @@ class Experiment:
         self.root = root
         self.config = config
         self.id = digest(config)
+        self._active_call: str | None = None
         if root.exists() and not resume:
             raise ValueError("Output exists; use --resume or a new output directory")
         if resume and not (root / "config.json").is_file():
@@ -106,6 +107,13 @@ class Experiment:
                     result.append(usage)
         return result
 
+    def record_provider_event(self, event: dict[str, object]) -> None:
+        """Persist a visible provider response before parsing, only for the active attempt."""
+        if self._active_call is None:
+            raise RuntimeError("Provider evidence requires an active journaled call")
+        suffix = "provider" if event["kind"] == "response" else "transport"
+        write_once(self.root / "calls" / f"{self._active_call}.{suffix}.json", event)
+
     @property
     def calls_started(self) -> int:
         return len(list((self.root / "calls").glob("*.intent.json")))
@@ -137,10 +145,29 @@ class Experiment:
                 return response_type.model_validate_json(response.read_text(encoding="utf-8"))
             if error.exists():
                 raise RecordedCallFailure(read_json(error))
+            captured = folder / f"{key}.provider.json"
+            if captured.exists():
+                from evaluation.provider import recover_response
+
+                try:
+                    result = recover_response(read_json(captured), request, response_type)
+                except Exception as exc:
+                    failure = safe_failure(exc)
+                    write_once(error, failure)
+                    raise RecordedCallFailure(failure) from exc
+                write_once(response, result.model_dump(mode="json"))
+                write_once(
+                    folder / f"{key}.recovery.json",
+                    {"recovered_at": timestamp(), "paid_calls": 0},
+                )
+                return result
             raise UncertainCall("Call started without a saved response; no automatic paid retry")
         if self.calls_started >= max_calls:
             raise CallLimit("Experiment call limit reached")
+        ensure_snapshot(folder / f"{key}.request.json", request.model_dump(mode="json"))
+        write_once(folder / f"{key}.attempt.json", {"started_at": timestamp()})
         write_once(intent, frozen)
+        self._active_call = key
         try:
             result = invoke()
         except Exception as exc:
@@ -155,6 +182,8 @@ class Experiment:
             failure = safe_failure(exc)
             write_once(error, failure)
             raise RecordedCallFailure(failure) from exc
+        finally:
+            self._active_call = None
         write_once(response, result.model_dump(mode="json"))
         return result
 

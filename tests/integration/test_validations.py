@@ -281,12 +281,26 @@ def test_dedicated_rabbitmq_worker_flow_uses_fake_runner(
         "app.workers.validation_tasks.DockerValidationRunner", lambda settings: fake
     )
     app = create_celery_app(settings, validation_worker=True)
+    # A developer may already have the normal validation worker running. The
+    # integration test must never publish to or consume its operational queue.
+    from kombu import Queue
+
+    queue_name = "traceguard_test_" + uuid4().hex
+    app.conf.task_default_queue = queue_name
+    app.conf.task_queues = (Queue(queue_name, auto_delete=True),)
+    send_task = app.send_task
+
+    def isolated_send_task(*args, **kwargs):
+        kwargs["queue"] = Queue(queue_name, auto_delete=True)
+        return send_task(*args, **kwargs)
+
+    monkeypatch.setattr(app, "send_task", isolated_send_task)
     try:
         with start_worker(
             app,
             pool="solo",
             concurrency=1,
-            queues=["traceguard.validation"],
+            queues=[queue_name],
             perform_ping_check=False,
             shutdown_timeout=30,
         ):

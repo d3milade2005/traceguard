@@ -6,6 +6,7 @@ from collections import Counter
 from pathlib import Path
 
 from app.core.context import ContextPolicy
+from app.core.exceptions import LLMConfigurationError
 from app.integrations.llm.openai import OpenAILLMClient
 from app.services.context import ContextManager
 from evaluation.artifacts import (
@@ -45,6 +46,8 @@ def main() -> None:
     parser.add_argument("--max-samples", type=int, default=16)
     parser.add_argument("--max-calls", type=int, default=0)
     parser.add_argument("--model", default="gpt-5.6-luna")
+    parser.add_argument("--timeout-seconds", type=int)
+    parser.add_argument("--max-output-tokens", type=int)
     parser.add_argument(
         "--reasoning-effort", choices=("low", "medium", "high", "xhigh"), default="medium"
     )
@@ -136,7 +139,12 @@ def main() -> None:
     if not selected_ids:
         parser.error("The selected manifest partition has no samples")
     by_id = {s.sample_id: s for s in samples}
-    provider = ProviderSettings()
+    overrides = {}
+    if args.timeout_seconds is not None:
+        overrides["openai_timeout_seconds"] = args.timeout_seconds
+    if args.max_output_tokens is not None:
+        overrides["openai_max_output_tokens"] = args.max_output_tokens
+    provider = ProviderSettings(**overrides)
     config = {
         "track": "attribution",
         "inference": inference_config(args.model, args.reasoning_effort, policy, provider),
@@ -205,6 +213,8 @@ def main() -> None:
             provider.openai_api_key,
             timeout_seconds=provider.openai_timeout_seconds,
             max_output_tokens=provider.openai_max_output_tokens,
+            service_tier="default",
+            observer=experiment.record_provider_event,
         )
         for sid in selected_ids:
             if experiment.completed(sid) is not None:
@@ -223,6 +233,9 @@ def main() -> None:
                 print(str(exc), flush=True)
                 break
             experiment.save(sid, row)
+            if row.get("failure") and row["failure"]["code"] == LLMConfigurationError.code:
+                print("Provider configuration failed; stopping before further attempts", flush=True)
+                break
         rows = experiment.results()
         usages = experiment.usages()
         report = build_report(rows, "attribution", planned=len(selected_ids), usages=usages)

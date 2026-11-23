@@ -1,5 +1,72 @@
 # Phase 8: evaluation and experiments
 
+## Experiment A preparation, 23 November 2026
+
+The new Terra High experiment uses `phase8-runner-v3` and `phase8-freeze-v3`.
+Historical v1/v2 results and freezes remain unchanged. Existing output directories
+must not be resumed under changed configuration or source. No final result is
+implied by a dry run, context audit, offline fixture, or prospective protocol.
+
+The private evidence package is
+`.local/experiments/who-when-terra-high-2026-11-23/`. It preserves the initial dirty
+working tree, historical journals, both dataset files, and verified PDF/Word thesis
+backups. Treat the directory as private; do not redistribute its benchmark data or
+the thesis without permission. Export a hash-inventoried copy independently of this
+ignored directory before submission.
+
+Preparation and verification use the existing `.venv` and locked evaluation group:
+
+```powershell
+.tools/bin/uv.exe sync --locked --offline --group evaluation --group langgraph --cache-dir .local/uv-cache
+.venv/Scripts/python.exe -m scripts.verify_attribution --output .local/experiments/who-when-terra-high-2026-11-23/verification-v1
+.venv/Scripts/python.exe -m scripts.prepare_attribution --output .local/experiments/who-when-terra-high-2026-11-23/preparation-v1
+```
+
+The verification command needs dedicated `TEST_DATABASE_URL` and
+`TEST_RABBITMQ_URL` values to exercise infrastructure, with a database name ending
+`_test`. It records commands, exit codes, console output and JUnit XML, excludes all
+live/sandbox markers, and runs the context audit. The local bootstrap records its
+separate database and broker vhost without credentials; production AI workers stay
+stopped. Missing infrastructure must be reported as skipped, never counted as passed.
+
+Preparation performs no inference. It validates the unchanged grouped manifest,
+preserves raw annotation anomalies, reconstructs the prospective requests, pins the
+environment/source/schema, and calculates conservative request-level budgets. The
+fixed protocol is `gpt-5.6-terra`, effort `high`, standard service tier, 60-second
+timeout, maximum 4096 output tokens, and zero SDK/sample retries. Output tokens
+already include reasoning tokens. Budget figures are planning estimates, not invoices
+or an enforced dollar limit. The actual inference model access check requires the
+separately authorized development execution.
+
+The opt-in provider observer records visible response JSON and available full usage
+before contract validation. It excludes private reasoning items, credentials and
+headers. HTTP failures retain safe type/status/request-ID facts rather than provider
+messages that might echo secrets. Normal production calls have no observer and
+retain their existing behavior. Each research attempt also preserves canonical and
+selected evidence, the structured request, intent, timestamps and terminal outcome.
+
+Resume reuses terminal responses/errors. If interruption occurs after visible response
+capture, parsing can be recovered offline without another paid call. An intent with
+neither a response nor terminal error stops for reconciliation. Never delete that
+intent to obtain another prediction. A stale lock requires verifying the earlier
+process has ended; it is not automatically stolen. Provider configuration failures
+stop the runner before further sample attempts.
+
+Only after actual Terra development results are complete and reviewed may
+`scripts.freeze_evaluation` issue a final freeze. Pass `--preparation` with the
+prospective `protocol.json` to link the exact source snapshot. A candidate protocol
+must never be labelled a reviewed final freeze. Final evaluation has its own
+separate budget approval and complete 149-ID check.
+
+After completion, `scripts.analyze_attribution` reconstructs inputs, labels and
+scores from saved records, rejects partial runs and generates metrics, subset tables,
+error categories, Wilson intervals and question-group bootstrap intervals. It reports
+missing cache details as cost ranges and missing usage as unknown cost. Intervals
+describe this partition; they do not remove selection bias or measure repeated-model
+stability. Context omission is an observed association, not proof of error causation.
+
+## Historical Phase 8 record
+
 Phase 8 adds repository research commands, not production inference behavior.
 Track A measures attribution on Who&When. Track B measures regression synthesis
 on actual replayable controlled executions. Benchmark traces never acquire invented

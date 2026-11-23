@@ -92,7 +92,11 @@ class RuntimeIdentity(BaseModel):
     bundle_digest: str = Field(pattern=r"^[0-9a-f]{64}$")
     python_version: Literal["3.12.12"] = "3.12.12"
     pytest_version: Literal["9.1.1"] = "9.1.1"
-    harness_implementation: Literal["controlled-calculator-v1"] = "controlled-calculator-v1"
+    harness_implementation: Literal[
+        "controlled-calculator-v1",
+        "controlled-agent-invocation-v2",
+        "controlled-agent-invocation-v3",
+    ] = "controlled-calculator-v1"
     limits: SandboxLimits
 
 

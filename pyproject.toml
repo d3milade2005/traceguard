@@ -18,6 +18,9 @@ dependencies = [
 ]
 
 [dependency-groups]
+langgraph = [
+    "langgraph>=1.0,<2",
+]
 evaluation = [
     "pyarrow>=23,<24",
 ]

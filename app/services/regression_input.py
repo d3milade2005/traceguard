@@ -3,6 +3,7 @@ import json
 from pydantic import JsonValue
 
 from app.core.exceptions import AttributionInputError, RegressionInputError
+from app.integrations.execution.langgraph_refund import validate_input
 from app.schemas.attributions import AttributionRecord, ReasoningEffort
 from app.schemas.regression_specs import RegressionRequest, RegressionSpec, check_data
 from app.schemas.traces import CanonicalTrace
@@ -92,6 +93,15 @@ def preflight(evidence: RegressionEvidence) -> str | None:
     attribution = evidence.attribution
     if attribution.decision == "abstain":
         return "Attribution abstained; no reliable diagnosed failure is available."
+    if evidence.canonical.source == "langgraph":
+        try:
+            decisive = attribution.decisive_sequence
+            if decisive is None:
+                raise ValueError("No decisive invocation")
+            step = evidence.canonical.steps[decisive]
+            validate_input(step.agent_id, step.input, ())
+        except (ValueError, IndexError):
+            return "External LangGraph has no approved replay harness; developer review required."
     if any(ref.contains_truncated for ref in attribution.evidence):
         return "Attribution evidence was truncated; required setup may be missing."
     decisive = attribution.decisive_sequence

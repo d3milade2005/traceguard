@@ -186,6 +186,7 @@ class DockerValidationRunner:
             image_id=image["Id"],
             repository_digest=next(iter(image.get("RepoDigests") or []), None),
             bundle_digest=digest,
+            harness_implementation="controlled-agent-invocation-v3",
             limits=SandboxLimits.from_settings(self.settings),
         )
 
